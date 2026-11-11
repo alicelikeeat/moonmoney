@@ -144,6 +144,13 @@ struct SettingsView: View {
                     } label: {
                         SettingsLabel("iCloud 同步", symbol: "icloud.fill", color: .blue)
                     }
+                    LabeledContent {
+                        Text(AppGroup.storeMode.rawValue)
+                            .font(.footnote)
+                            .foregroundStyle(AppGroup.storeMode == .memory ? Color.expense : Color.secondary)
+                    } label: {
+                        SettingsLabel("数据存储", symbol: "internaldrive.fill", color: .gray)
+                    }
                     Button {
                         export()
                     } label: {

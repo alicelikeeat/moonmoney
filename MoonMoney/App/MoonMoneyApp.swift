@@ -166,9 +166,16 @@ private struct TodaySpendBar: View {
                     }
                 }
                 Spacer(minLength: 4)
-                Label("记一笔", systemImage: "plus")
-                    .font(.subheadline.weight(.semibold))
-                    .labelStyle(.titleAndIcon)
+                if placement == .inline {
+                    Image(systemName: "plus")
+                        .font(.subheadline.weight(.bold))
+                } else {
+                    Label("记一笔", systemImage: "plus")
+                        .font(.subheadline.weight(.semibold))
+                        .labelStyle(.titleAndIcon)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
             }
             .padding(.leading, 16)
             .contentShape(.rect)

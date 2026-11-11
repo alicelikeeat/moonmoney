@@ -45,13 +45,22 @@ struct StatsView: View {
                         Image(systemName: member.isEmpty ? "ellipsis" : "person.crop.circle.fill")
                     }
                 }
+                // A segmented control inside a toolbar item puts glass on glass;
+                // a menu keeps a single glass button.
                 ToolbarItem(placement: .topBarTrailing) {
-                    Picker("类型", selection: $kind) {
-                        Text("支出").tag(RecordKind.expense)
-                        Text("收入").tag(RecordKind.income)
+                    Menu {
+                        Picker("类型", selection: $kind.animation(.smooth)) {
+                            Label("支出", systemImage: "arrow.up.right").tag(RecordKind.expense)
+                            Label("收入", systemImage: "arrow.down.left").tag(RecordKind.income)
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(kind.title)
+                            Image(systemName: "chevron.down").font(.caption2.weight(.bold))
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(kind.tint)
                     }
-                    .pickerStyle(.segmented)
-                    .frame(width: 120)
                 }
             }
             .navigationDestination(for: CategorySlice.self) { slice in
@@ -162,7 +171,7 @@ private struct StatsContent: View {
             .padding(.bottom, 24)
         }
         .background { AmbientBackground(tint: kind.tint) }
-        .scrollEdgeEffectStyle(.soft, for: .top)
+        .scrollEdgeEffectStyle(.hard, for: .top)
     }
 
     // MARK: Overview

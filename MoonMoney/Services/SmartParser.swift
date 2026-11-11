@@ -286,9 +286,12 @@ enum RuleParser {
             draft.cents = amount
             draft.kind = Keywords.incomeHints.contains(where: { segment.contains($0) }) ? .income : .expense
             draft.date = Calendar.current.date(byAdding: .day, value: carryOffset, to: .now) ?? .now
-            draft.note = cleanNote(segment)
+            let account = catalog.account(mentionedIn: segment) ?? catalog.account(mentionedIn: text)
+            var note = cleanNote(segment)
+            if let account { note = note.replacingOccurrences(of: account.name, with: "") }
+            draft.note = note.trimmingCharacters(in: .whitespaces)
             draft.categoryID = catalog.guessCategory(for: segment, kind: draft.kind)?.uuid
-            draft.accountID = catalog.account(mentionedIn: segment)?.uuid ?? catalog.account(mentionedIn: text)?.uuid
+            draft.accountID = account?.uuid
             drafts.append(draft)
         }
         return drafts

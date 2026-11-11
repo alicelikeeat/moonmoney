@@ -13,11 +13,18 @@ enum DataStore {
         let context = self.context
         let settings = AppSettings.shared
 
+        // Decide from the data itself, not a flag: a flag can survive while the store is new
+        // (reinstall, App Group move, restored backup), which used to leave categories empty.
+        let categoryCount = (try? context.fetchCount(FetchDescriptor<BillCategory>())) ?? 0
+        let accountCount = (try? context.fetchCount(FetchDescriptor<Account>())) ?? 0
+        if categoryCount == 0 { Seed.insertCategories(into: context) }
+        if accountCount == 0 { Seed.insertAccounts(into: context) }
         if !settings.hasSeeded {
-            let existing = (try? context.fetchCount(FetchDescriptor<BillCategory>())) ?? 0
-            if existing == 0 { Seed.insertDefaults(into: context) }
+            let tagCount = (try? context.fetchCount(FetchDescriptor<RecordTag>())) ?? 0
+            if tagCount == 0 { Seed.insertTags(into: context) }
             settings.hasSeeded = true
         }
+        repairUncategorized(context)
 
         let ledgers = (try? context.fetch(FetchDescriptor<Ledger>(sortBy: [SortDescriptor(\.order)]))) ?? []
         if ledgers.isEmpty {
@@ -31,6 +38,22 @@ enum DataStore {
         RecurringEngine.run(in: context)
         try? context.save()
         AppServices.afterLaunch(context: context)
+    }
+
+    /// Records saved while categories were missing get a best guess from their note.
+    private static func repairUncategorized(_ context: ModelContext) {
+        let descriptor = FetchDescriptor<Record>(predicate: #Predicate<Record> { $0.category == nil && $0.kindRaw != 2 })
+        guard let orphans = try? context.fetch(descriptor), !orphans.isEmpty else { return }
+        let catalog = Catalog(context: context)
+        for record in orphans {
+            record.category = catalog.guessCategory(for: record.note, kind: record.kind)
+                ?? catalog.categories.first { $0.name == "其他" && $0.kind == record.kind }
+                ?? catalog.categories.first { $0.kind == record.kind }
+            if record.account == nil {
+                record.account = catalog.account(mentionedIn: record.note) ?? defaultAccount(in: context)
+                if let account = record.account { record.currencyCode = account.currencyCode }
+            }
+        }
     }
 
     // MARK: Lookups
@@ -96,12 +119,21 @@ enum Seed {
     ]
 
     static func insertDefaults(into context: ModelContext) {
+        insertCategories(into: context)
+        insertAccounts(into: context)
+        insertTags(into: context)
+    }
+
+    static func insertCategories(into context: ModelContext) {
         for (index, item) in expense.enumerated() {
             context.insert(BillCategory(name: item.0, symbol: item.1, colorHex: item.2, kind: .expense, order: index))
         }
         for (index, item) in income.enumerated() {
             context.insert(BillCategory(name: item.0, symbol: item.1, colorHex: item.2, kind: .income, order: index))
         }
+    }
+
+    static func insertAccounts(into context: ModelContext) {
         let cash = Account(name: "现金", type: .cash, colorHex: "#30D158", order: 0)
         let card = Account(name: "储蓄卡", type: .debit, colorHex: "#0A84FF", order: 1)
         let alipay = Account(name: "支付宝", type: .wallet, symbol: "a.circle.fill", colorHex: "#1677FF", order: 2)
@@ -110,7 +142,9 @@ enum Seed {
         credit.creditLimitCents = 2_000_000
         for account in [cash, card, alipay, wechat, credit] { context.insert(account) }
         AppSettings.shared.defaultAccountID = alipay.uuid
+    }
 
+    static func insertTags(into context: ModelContext) {
         for (name, hex) in [("报销", "#64D2FF"), ("旅行", "#0A84FF"), ("必要", "#30D158"), ("冲动消费", "#FF453A")] {
             context.insert(RecordTag(name: name, colorHex: hex))
         }

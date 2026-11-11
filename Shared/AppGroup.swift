@@ -29,6 +29,11 @@ enum AppGroup {
         return .standard
     }()
 
+    /// Where the store lived before App Group support (v1.0).
+    static var legacyStoreURL: URL {
+        URL.applicationSupportDirectory.appendingPathComponent("MoonMoney.store")
+    }
+
     /// Store file inside the App Group when available, else the app's own Application Support.
     static var storeURL: URL {
         let base: URL
@@ -41,22 +46,71 @@ enum AppGroup {
         return base.appendingPathComponent("MoonMoney.store")
     }
 
+    enum StoreMode: String {
+        case appGroup = "App Group（与小组件共享）"
+        case local = "本机"
+        case memory = "临时内存（数据不会保存）"
+    }
+
+    /// How the last `makeContainer` call ended up storing data.
+    nonisolated(unsafe) private(set) static var storeMode: StoreMode = .local
+
     /// Builds a container. The app uses CloudKit when entitled; the widget never syncs.
     static func makeContainer(cloudSync: Bool) -> ModelContainer {
         let schema = Schema(AppSchema.models)
+        let url = storeURL
+        if cloudSync { migrateLegacyStore(to: url) }
+        let persistentMode: StoreMode = containerURL != nil ? .appGroup : .local
+
         if cloudSync {
-            let cloud = ModelConfiguration("MoonMoney", schema: schema, url: storeURL, cloudKitDatabase: .automatic)
+            let cloud = ModelConfiguration("MoonMoney", schema: schema, url: url, cloudKitDatabase: .automatic)
             if let container = try? ModelContainer(for: schema, configurations: cloud) {
+                storeMode = persistentMode
                 return container
             }
         }
-        let local = ModelConfiguration("MoonMoney", schema: schema, url: storeURL, cloudKitDatabase: .none)
+        let local = ModelConfiguration("MoonMoney", schema: schema, url: url, cloudKitDatabase: .none)
         if let container = try? ModelContainer(for: schema, configurations: local) {
+            storeMode = persistentMode
             return container
         }
-        // Last resort keeps the app usable even if the store is unreadable.
+        // The store could not be opened (e.g. a failed migration). Keep a backup and start fresh
+        // on disk rather than silently running from memory.
+        if cloudSync {
+            backUpStore(at: url)
+            if let container = try? ModelContainer(for: schema, configurations: local) {
+                storeMode = persistentMode
+                return container
+            }
+        }
+        storeMode = .memory
         let memory = ModelConfiguration("MoonMoney", schema: schema, isStoredInMemoryOnly: true)
         return try! ModelContainer(for: schema, configurations: memory)
+    }
+
+    private static func storeFiles(_ url: URL) -> [URL] {
+        [url, URL(fileURLWithPath: url.path + "-shm"), URL(fileURLWithPath: url.path + "-wal")]
+    }
+
+    /// Copies a v1.0 store into the App Group the first time the app runs with one.
+    private static func migrateLegacyStore(to url: URL) {
+        let fm = FileManager.default
+        let legacy = legacyStoreURL
+        guard legacy.standardizedFileURL != url.standardizedFileURL,
+              fm.fileExists(atPath: legacy.path),
+              !fm.fileExists(atPath: url.path) else { return }
+        for (source, target) in zip(storeFiles(legacy), storeFiles(url)) where fm.fileExists(atPath: source.path) {
+            try? fm.copyItem(at: source, to: target)
+        }
+    }
+
+    private static func backUpStore(at url: URL) {
+        let fm = FileManager.default
+        let stamp = Int(Date.now.timeIntervalSince1970)
+        for file in storeFiles(url) where fm.fileExists(atPath: file.path) {
+            let backup = URL(fileURLWithPath: file.path.replacingOccurrences(of: "MoonMoney.store", with: "MoonMoney-backup-\(stamp).store"))
+            try? fm.moveItem(at: file, to: backup)
+        }
     }
 }
 
