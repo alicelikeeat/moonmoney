@@ -21,7 +21,13 @@
 | **Siri 与快捷指令** | “用 MoonMoney 记一笔”（不打开 App 直接记账）、“MoonMoney 本月花了多少”、打开记账面板 |
 | **隐私** | 面容 ID / 触控 ID 应用锁，多任务界面自动遮挡金额 |
 | **数据** | CSV 导出（Excel 兼容）/ 导入、iCloud 同步就绪、示例数据生成 |
-| **个性化** | 自定义每月起始日（如发薪日）、周起始日、分类与账户图标颜色、触感反馈开关 |
+| **个性化** | 自定义背景（图片 / GIF / 视频，可调模糊与暗化）、7 套 App 图标、Emoji 分类图标、每月起始日、触感反馈 |
+| **AI 记账** | Apple 智能一句话记多笔（“午饭 32，打车 18 用微信”），不支持的设备自动用本地规则；越用越懂你的分类习惯 |
+| **自动记账** | Apple Pay 钱包交易自动化（按商户识别分类）、轻点背面截图识别（Vision OCR）、Siri 智能记账 |
+| **小组件** | 主屏小/中/大、锁屏圆形/矩形/行内、控制中心与操作按钮「记一笔」「AI 记账」 |
+| **报告** | 月度洞察（环比、涨幅最大分类、周末效应、高频小额、预算预测）、AI 点评、可分享年度账单海报 |
+| **理财** | 存钱目标（可关联账户）、借贷（借出/借入/部分还款）、报销跟踪、信用卡分期、家庭成员与按成员统计 |
+| **提醒** | 每日记账提醒、预算 80%/超支预警、信用卡还款提醒；Spotlight 可直接搜索账单 |
 
 ## iOS 26 原生设计要点
 
@@ -40,7 +46,11 @@
 2. 在 *Signing & Capabilities* 中选择你的 Team（如需真机运行，可把 Bundle ID `com.moonmoney.app` 改成你自己的）
 3. ⌘R 运行。首次启动会自动创建默认分类、账户和「日常账本」；在「我的 → 生成示例数据」可一键填充 3 个月演示数据
 
-> 也可以用 XcodeGen 重新生成工程：`xcodegen`（配置见 `project.yml`）。
+> 小组件通过 App Group `group.com.moonmoney.shared` 共享数据，用自己的 Team 签名时请在两个 target 的 *Signing & Capabilities* 里确认 App Group。
+
+### 未签名 IPA
+
+每次推送都会由 GitHub Actions 自动编译并发布到 Releases，用 AltStore / SideStore / 爱思助手 / TrollStore 自签安装（iOS 26+）。
 
 ### 开启 iCloud 同步（可选，需要付费开发者账号）
 
@@ -49,11 +59,13 @@
 ## 目录结构
 
 ```
+Shared/             App 与小组件共用：模型、设置、格式化、统计、App Group
+MoonMoneyWidgets/   小组件与控制中心控件
 MoonMoney/
 ├── App/            入口、TabView、底部记账条、锁屏
 ├── Models/         SwiftData 模型（账本、账户、分类、标签、账单、预算、周期规则）
 ├── Services/       设置、格式化、计算器、周期计算、统计、CSV、周期记账引擎、应用锁
-├── Intents/        App Intents（Siri / 快捷指令）
+├── Intents/        App Intents（Siri / 快捷指令 / 截图记账）
 └── Views/
     ├── Home/       明细、账单详情
     ├── Entry/      记一笔面板、计算器键盘、标签选择
