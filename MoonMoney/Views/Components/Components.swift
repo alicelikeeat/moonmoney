@@ -66,6 +66,18 @@ extension ButtonStyle where Self == InCardButtonStyle {
     }
 }
 
+// MARK: - Glass list rows
+
+/// Row background for List / Form: Liquid Glass instead of the opaque
+/// system cell, so the page background shows through every section.
+struct GlassRowBackground: View {
+    var body: some View {
+        Rectangle()
+            .fill(.clear)
+            .glassEffect(BackgroundStore.shared.clearGlass ? .clear : .regular, in: .rect)
+    }
+}
+
 // MARK: - Page background
 
 extension View {

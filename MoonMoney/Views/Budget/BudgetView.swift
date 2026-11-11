@@ -44,36 +44,39 @@ private struct BudgetContent: View {
         let categoryBudgets = budgets.filter { $0.category != nil }
 
         List {
-            totalCard(total: total, spent: spent)
-                .plainListRow(top: 8, bottom: 8)
+            Group {
+                totalCard(total: total, spent: spent)
+                    .plainListRow(top: 8, bottom: 8)
 
-            Section {
-                ForEach(categoryBudgets) { budget in
-                    if let category = budget.category {
-                        let used = counted.filter { $0.category?.uuid == category.uuid }.reduce(0) { $0 + $1.baseAmountCents }
-                        CategoryBudgetRow(category: category, budget: budget.amountCents, used: used)
-                            .contentShape(.rect)
-                            .onTapGesture { editingBudget = budget }
-                            .swipeActions {
-                                Button(role: .destructive) {
-                                    context.delete(budget)
-                                    try? context.save()
-                                } label: {
-                                    Label("删除", systemImage: "trash")
+                Section {
+                    ForEach(categoryBudgets) { budget in
+                        if let category = budget.category {
+                            let used = counted.filter { $0.category?.uuid == category.uuid }.reduce(0) { $0 + $1.baseAmountCents }
+                            CategoryBudgetRow(category: category, budget: budget.amountCents, used: used)
+                                .contentShape(.rect)
+                                .onTapGesture { editingBudget = budget }
+                                .swipeActions {
+                                    Button(role: .destructive) {
+                                        context.delete(budget)
+                                        try? context.save()
+                                    } label: {
+                                        Label("删除", systemImage: "trash")
+                                    }
                                 }
-                            }
+                        }
                     }
+                    Button {
+                        addingCategory = true
+                    } label: {
+                        Label("添加分类预算", systemImage: "plus.circle.fill")
+                    }
+                } header: {
+                    Text("分类预算")
+                } footer: {
+                    Text("预算按「每月起始日」（当前为每月 \(AppSettings.shared.monthStartDay) 日）计算，所有币种折算为本位币。")
                 }
-                Button {
-                    addingCategory = true
-                } label: {
-                    Label("添加分类预算", systemImage: "plus.circle.fill")
-                }
-            } header: {
-                Text("分类预算")
-            } footer: {
-                Text("预算按「每月起始日」（当前为每月 \(AppSettings.shared.monthStartDay) 日）计算，所有币种折算为本位币。")
             }
+            .listRowBackground(GlassRowBackground())
         }
         .scrollContentBackground(.hidden)
         .background { AmbientBackground(tint: .green) }

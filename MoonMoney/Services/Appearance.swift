@@ -26,6 +26,8 @@ final class BackgroundStore {
     /// Keep the colorful mesh tint on top of the media.
     var tintOverlay: Bool { didSet { defaults.set(tintOverlay, forKey: "bg.tint") } }
     var playVideo: Bool { didSet { defaults.set(playVideo, forKey: "bg.play") } }
+    /// Use the more transparent "clear" Liquid Glass for list sections.
+    var clearGlass: Bool { didSet { defaults.set(clearGlass, forKey: "bg.clearGlass") } }
 
     @ObservationIgnored private let defaults = UserDefaults.standard
     @ObservationIgnored private(set) var cachedImage: UIImage?
@@ -37,6 +39,7 @@ final class BackgroundStore {
         dim = defaults.object(forKey: "bg.dim") as? Double ?? 0.15
         tintOverlay = defaults.object(forKey: "bg.tint") as? Bool ?? false
         playVideo = defaults.object(forKey: "bg.play") as? Bool ?? true
+        clearGlass = defaults.bool(forKey: "bg.clearGlass")
         loadCaches()
     }
 

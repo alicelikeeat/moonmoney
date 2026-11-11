@@ -13,46 +13,49 @@ struct LedgerManagerView: View {
 
     var body: some View {
         List {
-            Section {
-                ForEach(ledgers) { ledger in
-                    Button {
-                        settings.currentLedgerID = ledger.uuid
-                        Haptics.tap()
-                    } label: {
-                        HStack(spacing: 12) {
-                            CategoryIcon(symbol: ledger.symbol, color: ledger.color, size: 40, filled: true)
-                            Text(ledger.name).foregroundStyle(.primary)
-                            Spacer()
-                            if ledger.uuid == settings.currentLedgerID {
-                                Image(systemName: "checkmark.circle.fill").foregroundStyle(.tint)
-                            }
-                        }
-                    }
-                    .swipeActions {
-                        if ledgers.count > 1 {
-                            Button(role: .destructive) {
-                                pendingDelete = ledger
-                            } label: {
-                                Label("删除", systemImage: "trash")
-                            }
-                        }
+            Group {
+                Section {
+                    ForEach(ledgers) { ledger in
                         Button {
-                            editing = ledger
+                            settings.currentLedgerID = ledger.uuid
+                            Haptics.tap()
                         } label: {
-                            Label("编辑", systemImage: "pencil")
+                            HStack(spacing: 12) {
+                                CategoryIcon(symbol: ledger.symbol, color: ledger.color, size: 40, filled: true)
+                                Text(ledger.name).foregroundStyle(.primary)
+                                Spacer()
+                                if ledger.uuid == settings.currentLedgerID {
+                                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.tint)
+                                }
+                            }
                         }
-                        .tint(.orange)
+                        .swipeActions {
+                            if ledgers.count > 1 {
+                                Button(role: .destructive) {
+                                    pendingDelete = ledger
+                                } label: {
+                                    Label("删除", systemImage: "trash")
+                                }
+                            }
+                            Button {
+                                editing = ledger
+                            } label: {
+                                Label("编辑", systemImage: "pencil")
+                            }
+                            .tint(.orange)
+                        }
                     }
+                    .onMove { indices, destination in
+                        var items = ledgers
+                        items.move(fromOffsets: indices, toOffset: destination)
+                        for (index, item) in items.enumerated() { item.order = index }
+                        try? context.save()
+                    }
+                } footer: {
+                    Text("每个账本的账单、预算相互独立；账户与分类在所有账本间共享。")
                 }
-                .onMove { indices, destination in
-                    var items = ledgers
-                    items.move(fromOffsets: indices, toOffset: destination)
-                    for (index, item) in items.enumerated() { item.order = index }
-                    try? context.save()
-                }
-            } footer: {
-                Text("每个账本的账单、预算相互独立；账户与分类在所有账本间共享。")
             }
+            .listRowBackground(GlassRowBackground())
         }
         .pageBackground()
         .navigationTitle("账本")
@@ -110,15 +113,18 @@ struct LedgerEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                HStack(spacing: 14) {
-                    CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true)
-                    TextField("账本名称，如「旅行」「装修」", text: $name)
-                        .font(.title3.weight(.semibold))
+                Group {
+                    HStack(spacing: 14) {
+                        CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true)
+                        TextField("账本名称，如「旅行」「装修」", text: $name)
+                            .font(.title3.weight(.semibold))
+                    }
+                    Section("颜色") { ColorSwatchPicker(hex: $colorHex) }
+                    Section("图标") {
+                        SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex)).padding(.vertical, 6)
+                    }
                 }
-                Section("颜色") { ColorSwatchPicker(hex: $colorHex) }
-                Section("图标") {
-                    SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex)).padding(.vertical, 6)
-                }
+                .listRowBackground(GlassRowBackground())
             }
             .pageBackground()
             .navigationTitle(ledger == nil ? "新建账本" : "编辑账本")
@@ -162,26 +168,29 @@ struct CategoryManagerView: View {
         let archived = categories.filter { $0.kind == kind && $0.isArchived }
 
         List {
-            Section {
-                ForEach(active) { category in
-                    row(category)
+            Group {
+                Section {
+                    ForEach(active) { category in
+                        row(category)
+                    }
+                    .onMove { indices, destination in
+                        var items = active
+                        items.move(fromOffsets: indices, toOffset: destination)
+                        for (index, item) in items.enumerated() { item.order = index }
+                        try? context.save()
+                    }
+                } footer: {
+                    Text("左滑可归档：归档后不再出现在记账面板，但历史账单保留。")
                 }
-                .onMove { indices, destination in
-                    var items = active
-                    items.move(fromOffsets: indices, toOffset: destination)
-                    for (index, item) in items.enumerated() { item.order = index }
-                    try? context.save()
-                }
-            } footer: {
-                Text("左滑可归档：归档后不再出现在记账面板，但历史账单保留。")
-            }
-            if !archived.isEmpty {
-                Section("已归档") {
-                    ForEach(archived) { category in
-                        row(category).opacity(0.6)
+                if !archived.isEmpty {
+                    Section("已归档") {
+                        ForEach(archived) { category in
+                            row(category).opacity(0.6)
+                        }
                     }
                 }
             }
+            .listRowBackground(GlassRowBackground())
         }
         .pageBackground()
         .navigationTitle("分类")
@@ -255,22 +264,25 @@ struct CategoryEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                HStack(spacing: 14) {
-                    CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true)
-                    TextField("分类名称", text: $name)
-                        .font(.title3.weight(.semibold))
-                }
-                Section("颜色") { ColorSwatchPicker(hex: $colorHex) }
-                Section("图标") {
-                    SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex)).padding(.vertical, 6)
-                }
-                if category != nil {
-                    Section {
-                        Button("删除分类", role: .destructive) { confirmDelete = true }
-                    } footer: {
-                        Text("删除后相关账单会变为「未分类」。")
+                Group {
+                    HStack(spacing: 14) {
+                        CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true)
+                        TextField("分类名称", text: $name)
+                            .font(.title3.weight(.semibold))
+                    }
+                    Section("颜色") { ColorSwatchPicker(hex: $colorHex) }
+                    Section("图标") {
+                        SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex)).padding(.vertical, 6)
+                    }
+                    if category != nil {
+                        Section {
+                            Button("删除分类", role: .destructive) { confirmDelete = true }
+                        } footer: {
+                            Text("删除后相关账单会变为「未分类」。")
+                        }
                     }
                 }
+                .listRowBackground(GlassRowBackground())
             }
             .pageBackground()
             .navigationTitle(category == nil ? "新建\(kind.title)分类" : "编辑分类")
@@ -320,35 +332,38 @@ struct TagManagerView: View {
 
     var body: some View {
         List {
-            Section {
-                HStack {
-                    TextField("新建标签", text: $newName)
-                        .onSubmit(add)
-                    Button("添加", action: add)
-                        .disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-            }
-            Section {
-                ForEach(tags) { tag in
+            Group {
+                Section {
                     HStack {
-                        Circle().fill(tag.color).frame(width: 10, height: 10)
-                        Text("#\(tag.name)")
-                        Spacer()
-                        Text("\(tag.records?.count ?? 0) 笔").font(.caption).foregroundStyle(.secondary)
-                    }
-                    .contentShape(.rect)
-                    .onTapGesture {
-                        renameText = tag.name
-                        renaming = tag
+                        TextField("新建标签", text: $newName)
+                            .onSubmit(add)
+                        Button("添加", action: add)
+                            .disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
                 }
-                .onDelete { offsets in
-                    for index in offsets { context.delete(tags[index]) }
-                    try? context.save()
+                Section {
+                    ForEach(tags) { tag in
+                        HStack {
+                            Circle().fill(tag.color).frame(width: 10, height: 10)
+                            Text("#\(tag.name)")
+                            Spacer()
+                            Text("\(tag.records?.count ?? 0) 笔").font(.caption).foregroundStyle(.secondary)
+                        }
+                        .contentShape(.rect)
+                        .onTapGesture {
+                            renameText = tag.name
+                            renaming = tag
+                        }
+                    }
+                    .onDelete { offsets in
+                        for index in offsets { context.delete(tags[index]) }
+                        try? context.save()
+                    }
+                } footer: {
+                    Text("标签可跨分类标记账单，例如「报销」「旅行」，并可在搜索中筛选。")
                 }
-            } footer: {
-                Text("标签可跨分类标记账单，例如「报销」「旅行」，并可在搜索中筛选。")
             }
+            .listRowBackground(GlassRowBackground())
         }
         .pageBackground()
         .navigationTitle("标签")
@@ -379,29 +394,32 @@ struct ExchangeRatesView: View {
 
     var body: some View {
         List {
-            Section {
-                ForEach(Currencies.common.filter { $0 != settings.baseCurrency }, id: \.self) { code in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(code).font(.headline)
-                            Text(Currencies.name(code)).font(.caption).foregroundStyle(.secondary)
+            Group {
+                Section {
+                    ForEach(Currencies.common.filter { $0 != settings.baseCurrency }, id: \.self) { code in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(code).font(.headline)
+                                Text(Currencies.name(code)).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text("1 \(code) =")
+                                .foregroundStyle(.secondary)
+                            TextField("汇率", value: Binding(
+                                get: { settings.rates[code] ?? 0 },
+                                set: { settings.rates[code] = $0 }
+                            ), format: .number.precision(.fractionLength(0...6)))
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 90)
+                            Text(settings.baseCurrency).foregroundStyle(.secondary)
                         }
-                        Spacer()
-                        Text("1 \(code) =")
-                            .foregroundStyle(.secondary)
-                        TextField("汇率", value: Binding(
-                            get: { settings.rates[code] ?? 0 },
-                            set: { settings.rates[code] = $0 }
-                        ), format: .number.precision(.fractionLength(0...6)))
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 90)
-                        Text(settings.baseCurrency).foregroundStyle(.secondary)
                     }
+                } footer: {
+                    Text("外币账户的账单会按此汇率折算为本位币参与统计和预算。")
                 }
-            } footer: {
-                Text("外币账户的账单会按此汇率折算为本位币参与统计和预算。")
             }
+            .listRowBackground(GlassRowBackground())
         }
         .pageBackground()
         .navigationTitle("汇率")

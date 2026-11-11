@@ -15,47 +15,50 @@ struct RecurringListView: View {
         }
 
         List {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("订阅与固定支出（每月约）").font(.subheadline).foregroundStyle(.secondary)
-                Text(Money.format(Int(monthly)))
-                    .font(.system(size: 32, weight: .bold, design: .rounded).monospacedDigit())
-                Text("\(active.count) 个生效中的规则，到期时自动入账").font(.caption).foregroundStyle(.secondary)
-            }
-            .glassCard(cornerRadius: 28, tint: Color.purple.opacity(0.1))
-            .plainListRow(top: 8, bottom: 8)
+            Group {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("订阅与固定支出（每月约）").font(.subheadline).foregroundStyle(.secondary)
+                    Text(Money.format(Int(monthly)))
+                        .font(.system(size: 32, weight: .bold, design: .rounded).monospacedDigit())
+                    Text("\(active.count) 个生效中的规则，到期时自动入账").font(.caption).foregroundStyle(.secondary)
+                }
+                .glassCard(cornerRadius: 28, tint: Color.purple.opacity(0.1))
+                .plainListRow(top: 8, bottom: 8)
 
-            if rules.isEmpty {
-                ContentUnavailableView("还没有周期记账", systemImage: "repeat",
-                                       description: Text("房租、工资、会员订阅……设置一次，按时自动记账。"))
-                    .plainListRow()
-            }
+                if rules.isEmpty {
+                    ContentUnavailableView("还没有周期记账", systemImage: "repeat",
+                                           description: Text("房租、工资、会员订阅……设置一次，按时自动记账。"))
+                        .plainListRow()
+                }
 
-            Section {
-                ForEach(rules) { rule in
-                    Button {
-                        editing = rule
-                    } label: {
-                        RecurringRow(rule: rule, category: categories.first { $0.uuid == rule.categoryID })
-                    }
-                    .buttonStyle(.plain)
-                    .swipeActions {
-                        Button(role: .destructive) {
-                            context.delete(rule)
-                            try? context.save()
-                        } label: {
-                            Label("删除", systemImage: "trash")
-                        }
+                Section {
+                    ForEach(rules) { rule in
                         Button {
-                            rule.isActive.toggle()
-                            if rule.isActive { RecurringEngine.run(in: context) }
-                            try? context.save()
+                            editing = rule
                         } label: {
-                            Label(rule.isActive ? "暂停" : "恢复", systemImage: rule.isActive ? "pause" : "play")
+                            RecurringRow(rule: rule, category: categories.first { $0.uuid == rule.categoryID })
                         }
-                        .tint(.orange)
+                        .buttonStyle(.plain)
+                        .swipeActions {
+                            Button(role: .destructive) {
+                                context.delete(rule)
+                                try? context.save()
+                            } label: {
+                                Label("删除", systemImage: "trash")
+                            }
+                            Button {
+                                rule.isActive.toggle()
+                                if rule.isActive { RecurringEngine.run(in: context) }
+                                try? context.save()
+                            } label: {
+                                Label(rule.isActive ? "暂停" : "恢复", systemImage: rule.isActive ? "pause" : "play")
+                            }
+                            .tint(.orange)
+                        }
                     }
                 }
             }
+            .listRowBackground(GlassRowBackground())
         }
         .scrollContentBackground(.hidden)
         .background { AmbientBackground(tint: .purple) }
@@ -148,44 +151,47 @@ struct RecurringEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    Picker("类型", selection: $kind) {
-                        ForEach(RecordKind.allCases) { Text($0.title).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    TextField("名称，如「房租」「Apple One」", text: $name)
-                    CentsField(title: "金额", cents: $cents)
-                }
-
-                Section {
-                    if kind == .transfer {
-                        accountPicker("转出账户", selection: $accountID)
-                        accountPicker("转入账户", selection: $toAccountID)
-                    } else {
-                        Picker("分类", selection: $categoryID) {
-                            Text("未选择").tag(UUID?.none)
-                            ForEach(categories.filter { $0.kind == kind }) { category in
-                                Label(category.name, systemImage: category.symbol).tag(Optional(category.uuid))
-                            }
+                Group {
+                    Section {
+                        Picker("类型", selection: $kind) {
+                            ForEach(RecordKind.allCases) { Text($0.title).tag($0) }
                         }
-                        accountPicker("账户", selection: $accountID)
+                        .pickerStyle(.segmented)
+                        TextField("名称，如「房租」「Apple One」", text: $name)
+                        CentsField(title: "金额", cents: $cents)
                     }
-                    TextField("备注", text: $note)
-                }
 
-                Section {
-                    Picker("频率", selection: $frequency) {
-                        ForEach(RecurrenceFrequency.allCases) { Text($0.title).tag($0) }
+                    Section {
+                        if kind == .transfer {
+                            accountPicker("转出账户", selection: $accountID)
+                            accountPicker("转入账户", selection: $toAccountID)
+                        } else {
+                            Picker("分类", selection: $categoryID) {
+                                Text("未选择").tag(UUID?.none)
+                                ForEach(categories.filter { $0.kind == kind }) { category in
+                                    Label(category.name, systemImage: category.symbol).tag(Optional(category.uuid))
+                                }
+                            }
+                            accountPicker("账户", selection: $accountID)
+                        }
+                        TextField("备注", text: $note)
                     }
-                    Stepper("间隔：每 \(interval) \(unit)", value: $interval, in: 1...24)
-                    DatePicker(rule == nil ? "首次记账" : "下次记账", selection: $nextDate, displayedComponents: [.date, .hourAndMinute])
-                    Toggle("结束日期", isOn: $hasEnd.animation())
-                    if hasEnd {
-                        DatePicker("结束于", selection: $endDate, displayedComponents: .date)
+
+                    Section {
+                        Picker("频率", selection: $frequency) {
+                            ForEach(RecurrenceFrequency.allCases) { Text($0.title).tag($0) }
+                        }
+                        Stepper("间隔：每 \(interval) \(unit)", value: $interval, in: 1...24)
+                        DatePicker(rule == nil ? "首次记账" : "下次记账", selection: $nextDate, displayedComponents: [.date, .hourAndMinute])
+                        Toggle("结束日期", isOn: $hasEnd.animation())
+                        if hasEnd {
+                            DatePicker("结束于", selection: $endDate, displayedComponents: .date)
+                        }
+                    } footer: {
+                        Text("到期后打开 App 时自动生成账单；若首次日期在过去，会补齐之前的每一期。")
                     }
-                } footer: {
-                    Text("到期后打开 App 时自动生成账单；若首次日期在过去，会补齐之前的每一期。")
                 }
+                .listRowBackground(GlassRowBackground())
             }
             .pageBackground()
             .navigationTitle(rule == nil ? "新建周期记账" : "编辑周期记账")

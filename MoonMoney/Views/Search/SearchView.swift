@@ -66,36 +66,39 @@ private struct SearchResults: View {
         let summary = Stats.summary(results)
 
         List {
-            if text.isEmpty && scope == .all {
-                Section("最近记录") {
-                    ForEach(results.prefix(30)) { record in
-                        NavigationLink(value: record) { RecordRow(record: record, showDate: true) }
+            Group {
+                if text.isEmpty && scope == .all {
+                    Section("最近记录") {
+                        ForEach(results.prefix(30)) { record in
+                            NavigationLink(value: record) { RecordRow(record: record, showDate: true) }
+                        }
                     }
-                }
-            } else if results.isEmpty {
-                ContentUnavailableView.search(text: text)
-                    .plainListRow()
-            } else {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(results.count) 笔结果").font(.headline)
-                        Text("支出 \(Money.format(summary.expense)) · 收入 \(Money.format(summary.income))")
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
+                } else if results.isEmpty {
+                    ContentUnavailableView.search(text: text)
+                        .plainListRow()
+                } else {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("\(results.count) 笔结果").font(.headline)
+                            Text("支出 \(Money.format(summary.expense)) · 收入 \(Money.format(summary.income))")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
                     }
-                    Spacer()
-                }
-                .glassCard(cornerRadius: 24, padding: 14)
-                .plainListRow(top: 4, bottom: 4)
+                    .glassCard(cornerRadius: 24, padding: 14)
+                    .plainListRow(top: 4, bottom: 4)
 
-                ForEach(Stats.groupedByDay(Array(results.prefix(500))), id: \.day) { group in
-                    Section(group.day.dayHeaderTitle) {
-                        ForEach(group.records) { record in
-                            NavigationLink(value: record) { RecordRow(record: record) }
+                    ForEach(Stats.groupedByDay(Array(results.prefix(500))), id: \.day) { group in
+                        Section(group.day.dayHeaderTitle) {
+                            ForEach(group.records) { record in
+                                NavigationLink(value: record) { RecordRow(record: record) }
+                            }
                         }
                     }
                 }
             }
+            .listRowBackground(GlassRowBackground())
         }
         .scrollContentBackground(.hidden)
         .background { AmbientBackground(tint: .blue) }

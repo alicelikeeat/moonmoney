@@ -19,60 +19,63 @@ struct SavingsGoalsView: View {
         let target = active.reduce(0) { $0 + $1.targetCents }
 
         List {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("已存 / 目标").font(.subheadline).foregroundStyle(.secondary)
-                Text("\(Money.format(saved)) / \(Money.format(target))")
-                    .font(.title2.bold().monospacedDigit())
-                ProgressCapsule(value: Double(saved) / Double(max(target, 1)), tint: .orange, height: 10)
-            }
-            .glassCard(cornerRadius: 28, tint: Color.orange.opacity(0.08))
-            .plainListRow(top: 8, bottom: 8)
+            Group {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("已存 / 目标").font(.subheadline).foregroundStyle(.secondary)
+                    Text("\(Money.format(saved)) / \(Money.format(target))")
+                        .font(.title2.bold().monospacedDigit())
+                    ProgressCapsule(value: Double(saved) / Double(max(target, 1)), tint: .orange, height: 10)
+                }
+                .glassCard(cornerRadius: 28, tint: Color.orange.opacity(0.08))
+                .plainListRow(top: 8, bottom: 8)
 
-            if goals.isEmpty {
-                ContentUnavailableView("还没有存钱目标", systemImage: "star.circle",
-                                       description: Text("旅行基金、换新手机、应急金……给每一笔钱一个去处。"))
-                    .plainListRow()
-            }
+                if goals.isEmpty {
+                    ContentUnavailableView("还没有存钱目标", systemImage: "star.circle",
+                                           description: Text("旅行基金、换新手机、应急金……给每一笔钱一个去处。"))
+                        .plainListRow()
+                }
 
-            ForEach(goals) { goal in
-                GoalRow(goal: goal, progress: progressCents(goal))
-                    .contentShape(.rect)
-                    .onTapGesture { editing = goal }
-                    .swipeActions(edge: .leading) {
-                        if goal.accountID == nil {
-                            Button {
-                                depositCents = 0
-                                withdraw = false
-                                depositing = goal
-                            } label: {
-                                Label("存入", systemImage: "plus")
+                ForEach(goals) { goal in
+                    GoalRow(goal: goal, progress: progressCents(goal))
+                        .contentShape(.rect)
+                        .onTapGesture { editing = goal }
+                        .swipeActions(edge: .leading) {
+                            if goal.accountID == nil {
+                                Button {
+                                    depositCents = 0
+                                    withdraw = false
+                                    depositing = goal
+                                } label: {
+                                    Label("存入", systemImage: "plus")
+                                }
+                                .tint(.green)
+                                Button {
+                                    depositCents = 0
+                                    withdraw = true
+                                    depositing = goal
+                                } label: {
+                                    Label("取出", systemImage: "minus")
+                                }
+                                .tint(.orange)
                             }
-                            .tint(.green)
-                            Button {
-                                depositCents = 0
-                                withdraw = true
-                                depositing = goal
+                        }
+                        .swipeActions {
+                            Button(role: .destructive) {
+                                context.delete(goal)
+                                try? context.save()
                             } label: {
-                                Label("取出", systemImage: "minus")
+                                Label("删除", systemImage: "trash")
                             }
-                            .tint(.orange)
+                            Button {
+                                goal.isArchived.toggle()
+                                try? context.save()
+                            } label: {
+                                Label(goal.isArchived ? "恢复" : "归档", systemImage: "archivebox")
+                            }
                         }
-                    }
-                    .swipeActions {
-                        Button(role: .destructive) {
-                            context.delete(goal)
-                            try? context.save()
-                        } label: {
-                            Label("删除", systemImage: "trash")
-                        }
-                        Button {
-                            goal.isArchived.toggle()
-                            try? context.save()
-                        } label: {
-                            Label(goal.isArchived ? "恢复" : "归档", systemImage: "archivebox")
-                        }
-                    }
+                }
             }
+            .listRowBackground(GlassRowBackground())
         }
         .scrollContentBackground(.hidden)
         .background { AmbientBackground(tint: .orange) }
@@ -185,26 +188,29 @@ private struct GoalEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                HStack(spacing: 14) {
-                    CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true)
-                    TextField("目标名称，如「日本旅行」", text: $name).font(.title3.weight(.semibold))
+                Group {
+                    HStack(spacing: 14) {
+                        CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true)
+                        TextField("目标名称，如「日本旅行」", text: $name).font(.title3.weight(.semibold))
+                    }
+                    Section {
+                        CentsField(title: "目标金额", cents: $target)
+                        Picker("关联账户", selection: $accountID) {
+                            Text("不关联（手动存入）").tag(UUID?.none)
+                            ForEach(accounts) { Text($0.name).tag(Optional($0.uuid)) }
+                        }
+                        if accountID == nil {
+                            CentsField(title: "已存金额", cents: $saved)
+                        }
+                        Toggle("截止日期", isOn: $hasDeadline.animation())
+                        if hasDeadline {
+                            DatePicker("截止于", selection: $deadline, displayedComponents: .date)
+                        }
+                    }
+                    Section("颜色") { ColorSwatchPicker(hex: $colorHex) }
+                    Section("图标") { SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex)).padding(.vertical, 6) }
                 }
-                Section {
-                    CentsField(title: "目标金额", cents: $target)
-                    Picker("关联账户", selection: $accountID) {
-                        Text("不关联（手动存入）").tag(UUID?.none)
-                        ForEach(accounts) { Text($0.name).tag(Optional($0.uuid)) }
-                    }
-                    if accountID == nil {
-                        CentsField(title: "已存金额", cents: $saved)
-                    }
-                    Toggle("截止日期", isOn: $hasDeadline.animation())
-                    if hasDeadline {
-                        DatePicker("截止于", selection: $deadline, displayedComponents: .date)
-                    }
-                }
-                Section("颜色") { ColorSwatchPicker(hex: $colorHex) }
-                Section("图标") { SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex)).padding(.vertical, 6) }
+                .listRowBackground(GlassRowBackground())
             }
             .pageBackground()
             .navigationTitle(goal == nil ? "新建目标" : "编辑目标")
@@ -255,51 +261,54 @@ struct DebtsView: View {
         let visible = debts.filter { showSettled || !$0.isSettled }
 
         List {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("别人欠我").font(.caption).foregroundStyle(.secondary)
-                    Text(Money.format(receivable)).font(.title3.bold().monospacedDigit()).foregroundStyle(Color.income)
+            Group {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("别人欠我").font(.caption).foregroundStyle(.secondary)
+                        Text(Money.format(receivable)).font(.title3.bold().monospacedDigit()).foregroundStyle(Color.income)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("我欠别人").font(.caption).foregroundStyle(.secondary)
+                        Text(Money.format(payable)).font(.title3.bold().monospacedDigit()).foregroundStyle(Color.expense)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("我欠别人").font(.caption).foregroundStyle(.secondary)
-                    Text(Money.format(payable)).font(.title3.bold().monospacedDigit()).foregroundStyle(Color.expense)
+                .glassCard(cornerRadius: 28)
+                .plainListRow(top: 8, bottom: 8)
+
+                if debts.isEmpty {
+                    ContentUnavailableView("没有借贷记录", systemImage: "person.2",
+                                           description: Text("记下借给朋友或向别人借的钱，到期提醒不再尴尬。"))
+                        .plainListRow()
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .glassCard(cornerRadius: 28)
-            .plainListRow(top: 8, bottom: 8)
 
-            if debts.isEmpty {
-                ContentUnavailableView("没有借贷记录", systemImage: "person.2",
-                                       description: Text("记下借给朋友或向别人借的钱，到期提醒不再尴尬。"))
-                    .plainListRow()
-            }
-
-            ForEach(visible) { debt in
-                DebtRow(debt: debt)
-                    .contentShape(.rect)
-                    .onTapGesture { editing = debt }
-                    .swipeActions(edge: .leading) {
-                        if !debt.isSettled {
-                            Button {
-                                repayCents = debt.remainingCents
-                                repaying = debt
-                            } label: {
-                                Label(debt.isLent ? "收款" : "还款", systemImage: "arrow.uturn.backward")
+                ForEach(visible) { debt in
+                    DebtRow(debt: debt)
+                        .contentShape(.rect)
+                        .onTapGesture { editing = debt }
+                        .swipeActions(edge: .leading) {
+                            if !debt.isSettled {
+                                Button {
+                                    repayCents = debt.remainingCents
+                                    repaying = debt
+                                } label: {
+                                    Label(debt.isLent ? "收款" : "还款", systemImage: "arrow.uturn.backward")
+                                }
+                                .tint(.green)
                             }
-                            .tint(.green)
                         }
-                    }
-                    .swipeActions {
-                        Button(role: .destructive) {
-                            context.delete(debt)
-                            try? context.save()
-                        } label: {
-                            Label("删除", systemImage: "trash")
+                        .swipeActions {
+                            Button(role: .destructive) {
+                                context.delete(debt)
+                                try? context.save()
+                            } label: {
+                                Label("删除", systemImage: "trash")
+                            }
                         }
-                    }
+                }
             }
+            .listRowBackground(GlassRowBackground())
         }
         .scrollContentBackground(.hidden)
         .background { AmbientBackground(tint: .teal) }
@@ -424,21 +433,24 @@ private struct DebtEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                Picker("类型", selection: $lent) {
-                    Text("我借出").tag(true)
-                    Text("我借入").tag(false)
+                Group {
+                    Picker("类型", selection: $lent) {
+                        Text("我借出").tag(true)
+                        Text("我借入").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                    Section {
+                        TextField("对方", text: $person)
+                        CentsField(title: "金额", cents: $amount)
+                        if debt != nil { CentsField(title: "已还", cents: $repaid) }
+                        DatePicker("日期", selection: $date, displayedComponents: .date)
+                        Toggle("约定还款日", isOn: $hasDue.animation())
+                        if hasDue { DatePicker("还款日", selection: $due, displayedComponents: .date) }
+                        TextField("备注", text: $note)
+                        if debt != nil { Toggle("已结清", isOn: $settled) }
+                    }
                 }
-                .pickerStyle(.segmented)
-                Section {
-                    TextField("对方", text: $person)
-                    CentsField(title: "金额", cents: $amount)
-                    if debt != nil { CentsField(title: "已还", cents: $repaid) }
-                    DatePicker("日期", selection: $date, displayedComponents: .date)
-                    Toggle("约定还款日", isOn: $hasDue.animation())
-                    if hasDue { DatePicker("还款日", selection: $due, displayedComponents: .date) }
-                    TextField("备注", text: $note)
-                    if debt != nil { Toggle("已结清", isOn: $settled) }
-                }
+                .listRowBackground(GlassRowBackground())
             }
             .pageBackground()
             .navigationTitle(debt == nil ? "新建借贷" : "编辑借贷")
@@ -483,45 +495,48 @@ struct ReimbursementsView: View {
         let pendingTotal = pending.reduce(0) { $0 + $1.baseAmountCents }
 
         List {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("待报销").font(.subheadline).foregroundStyle(.secondary)
-                Text(Money.format(pendingTotal)).font(.system(size: 32, weight: .bold, design: .rounded).monospacedDigit())
-                Text("\(pending.count) 笔 · 记账时打开「报销」即可加入").font(.caption).foregroundStyle(.secondary)
-            }
-            .glassCard(cornerRadius: 28, tint: Color.cyan.opacity(0.08))
-            .plainListRow(top: 8, bottom: 8)
-
-            Section("待报销") {
-                if pending.isEmpty { Text("没有待报销的账单").foregroundStyle(.secondary) }
-                ForEach(pending) { record in
-                    NavigationLink(value: record) { RecordRow(record: record, showDate: true) }
-                        .swipeActions(edge: .leading) {
-                            Button {
-                                record.reimbursement = .done
-                                try? context.save()
-                                Haptics.success()
-                            } label: {
-                                Label("已报销", systemImage: "checkmark")
-                            }
-                            .tint(.green)
-                        }
+            Group {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("待报销").font(.subheadline).foregroundStyle(.secondary)
+                    Text(Money.format(pendingTotal)).font(.system(size: 32, weight: .bold, design: .rounded).monospacedDigit())
+                    Text("\(pending.count) 笔 · 记账时打开「报销」即可加入").font(.caption).foregroundStyle(.secondary)
                 }
-            }
-            if showDone {
-                Section("已报销") {
-                    ForEach(done) { record in
+                .glassCard(cornerRadius: 28, tint: Color.cyan.opacity(0.08))
+                .plainListRow(top: 8, bottom: 8)
+
+                Section("待报销") {
+                    if pending.isEmpty { Text("没有待报销的账单").foregroundStyle(.secondary) }
+                    ForEach(pending) { record in
                         NavigationLink(value: record) { RecordRow(record: record, showDate: true) }
                             .swipeActions(edge: .leading) {
                                 Button {
-                                    record.reimbursement = .pending
+                                    record.reimbursement = .done
                                     try? context.save()
+                                    Haptics.success()
                                 } label: {
-                                    Label("撤回", systemImage: "arrow.uturn.backward")
+                                    Label("已报销", systemImage: "checkmark")
                                 }
+                                .tint(.green)
                             }
                     }
                 }
+                if showDone {
+                    Section("已报销") {
+                        ForEach(done) { record in
+                            NavigationLink(value: record) { RecordRow(record: record, showDate: true) }
+                                .swipeActions(edge: .leading) {
+                                    Button {
+                                        record.reimbursement = .pending
+                                        try? context.save()
+                                    } label: {
+                                        Label("撤回", systemImage: "arrow.uturn.backward")
+                                    }
+                                }
+                        }
+                    }
+                }
             }
+            .listRowBackground(GlassRowBackground())
         }
         .scrollContentBackground(.hidden)
         .background { AmbientBackground(tint: .cyan) }

@@ -462,29 +462,32 @@ struct CategoryRecordsView: View {
         let matching = records.filter { ($0.category?.uuid ?? Self.unknown) == slice.id && !$0.excludedFromStats }
         let total = matching.reduce(0) { $0 + $1.baseAmountCents }
         List {
-            Section {
-                HStack(spacing: 14) {
-                    CategoryIcon(symbol: slice.symbol, color: slice.color, size: 52, filled: true)
-                    VStack(alignment: .leading) {
-                        Text(Money.format(total))
-                            .font(.title2.bold().monospacedDigit())
-                        Text("\(matching.count) 笔 · 平均 \(Money.format(total / max(matching.count, 1)))")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+            Group {
+                Section {
+                    HStack(spacing: 14) {
+                        CategoryIcon(symbol: slice.symbol, color: slice.color, size: 52, filled: true)
+                        VStack(alignment: .leading) {
+                            Text(Money.format(total))
+                                .font(.title2.bold().monospacedDigit())
+                            Text("\(matching.count) 笔 · 平均 \(Money.format(total / max(matching.count, 1)))")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
                     }
+                    .glassCard(tint: slice.color.opacity(0.12))
+                    .plainListRow()
                 }
-                .glassCard(tint: slice.color.opacity(0.12))
-                .plainListRow()
-            }
-            ForEach(Stats.groupedByDay(matching), id: \.day) { group in
-                Section(group.day.dayHeaderTitle) {
-                    ForEach(group.records) { record in
-                        NavigationLink(value: record) {
-                            RecordRow(record: record)
+                ForEach(Stats.groupedByDay(matching), id: \.day) { group in
+                    Section(group.day.dayHeaderTitle) {
+                        ForEach(group.records) { record in
+                            NavigationLink(value: record) {
+                                RecordRow(record: record)
+                            }
                         }
                     }
                 }
             }
+            .listRowBackground(GlassRowBackground())
         }
         .scrollContentBackground(.hidden)
         .background { AmbientBackground(tint: slice.color) }

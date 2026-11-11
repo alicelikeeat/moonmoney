@@ -62,72 +62,75 @@ private struct CalendarContent: View {
         let monthSummary = Stats.summary(records)
 
         List {
-            VStack(spacing: 12) {
-                HStack {
-                    Button { onShift(-1) } label: { Image(systemName: "chevron.left") }
-                        .buttonStyle(.inCard(circle: true))
-                    Spacer()
-                    VStack(spacing: 2) {
-                        Text("支出 \(Money.format(monthSummary.expense))")
-                            .font(.subheadline.weight(.semibold).monospacedDigit())
-                        Text("收入 \(Money.format(monthSummary.income))")
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(Color.income)
+            Group {
+                VStack(spacing: 12) {
+                    HStack {
+                        Button { onShift(-1) } label: { Image(systemName: "chevron.left") }
+                            .buttonStyle(.inCard(circle: true))
+                        Spacer()
+                        VStack(spacing: 2) {
+                            Text("支出 \(Money.format(monthSummary.expense))")
+                                .font(.subheadline.weight(.semibold).monospacedDigit())
+                            Text("收入 \(Money.format(monthSummary.income))")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(Color.income)
+                        }
+                        Spacer()
+                        Button { onShift(1) } label: { Image(systemName: "chevron.right") }
+                            .buttonStyle(.inCard(circle: true))
                     }
-                    Spacer()
-                    Button { onShift(1) } label: { Image(systemName: "chevron.right") }
-                        .buttonStyle(.inCard(circle: true))
-                }
 
-                weekdayHeader
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
-                    ForEach(Array(gridDays.enumerated()), id: \.offset) { _, day in
-                        if let day {
-                            DayCell(
-                                day: day,
-                                summary: totals[day],
-                                intensity: maxExpense > 0 ? Double(totals[day]?.expense ?? 0) / Double(maxExpense) : 0,
-                                isSelected: calendar.isDate(day, inSameDayAs: selectedDay),
-                                isToday: calendar.isDateInToday(day)
-                            )
-                            .onTapGesture {
-                                withAnimation(.snappy) { selectedDay = day }
-                                Haptics.tap()
+                    weekdayHeader
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
+                        ForEach(Array(gridDays.enumerated()), id: \.offset) { _, day in
+                            if let day {
+                                DayCell(
+                                    day: day,
+                                    summary: totals[day],
+                                    intensity: maxExpense > 0 ? Double(totals[day]?.expense ?? 0) / Double(maxExpense) : 0,
+                                    isSelected: calendar.isDate(day, inSameDayAs: selectedDay),
+                                    isToday: calendar.isDateInToday(day)
+                                )
+                                .onTapGesture {
+                                    withAnimation(.snappy) { selectedDay = day }
+                                    Haptics.tap()
+                                }
+                            } else {
+                                Color.clear.frame(height: 52)
                             }
-                        } else {
-                            Color.clear.frame(height: 52)
                         }
                     }
                 }
-            }
-            .glassCard(cornerRadius: 30, padding: 14)
-            .plainListRow(top: 8, bottom: 8)
+                .glassCard(cornerRadius: 30, padding: 14)
+                .plainListRow(top: 8, bottom: 8)
 
-            Section {
-                if dayRecords.isEmpty {
-                    Text("这天没有记录")
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(dayRecords) { record in
-                    NavigationLink(value: record) {
-                        RecordRow(record: record)
+                Section {
+                    if dayRecords.isEmpty {
+                        Text("这天没有记录")
+                            .foregroundStyle(.secondary)
                     }
-                }
-            } header: {
-                HStack {
-                    Text(selectedDay.dayHeaderTitle)
-                    Spacer()
-                    Button {
-                        router.newRecord(date: dateForNewRecord)
-                    } label: {
-                        Label("补记", systemImage: "plus")
-                            .font(.footnote.weight(.semibold))
+                    ForEach(dayRecords) { record in
+                        NavigationLink(value: record) {
+                            RecordRow(record: record)
+                        }
                     }
-                    .buttonStyle(.glass)
-                    .controlSize(.small)
+                } header: {
+                    HStack {
+                        Text(selectedDay.dayHeaderTitle)
+                        Spacer()
+                        Button {
+                            router.newRecord(date: dateForNewRecord)
+                        } label: {
+                            Label("补记", systemImage: "plus")
+                                .font(.footnote.weight(.semibold))
+                        }
+                        .buttonStyle(.glass)
+                        .controlSize(.small)
+                    }
+                    .textCase(nil)
                 }
-                .textCase(nil)
             }
+            .listRowBackground(GlassRowBackground())
         }
         .scrollContentBackground(.hidden)
         .background { AmbientBackground() }

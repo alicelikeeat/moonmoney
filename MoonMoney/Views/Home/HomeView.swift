@@ -106,61 +106,64 @@ struct MonthRecordsList: View {
         let groups = Stats.groupedByDay(records)
 
         List {
-            MonthSummaryCard(
-                interval: interval,
-                summary: summary,
-                budgetCents: totalBudget?.amountCents ?? 0,
-                anchor: $anchor
-            )
-            .plainListRow(top: 8, bottom: 8)
+            Group {
+                MonthSummaryCard(
+                    interval: interval,
+                    summary: summary,
+                    budgetCents: totalBudget?.amountCents ?? 0,
+                    anchor: $anchor
+                )
+                .plainListRow(top: 8, bottom: 8)
 
-            if records.isEmpty {
-                ContentUnavailableView {
-                    Label("这个月还没有记录", systemImage: "moon.zzz")
-                } description: {
-                    Text("点按下方「记一笔」，或对 Siri 说“用 MoonMoney 记一笔”。")
-                } actions: {
-                    Button("记一笔") { router.newRecord() }
-                        .buttonStyle(.glassProminent)
-                }
-                .plainListRow()
-            }
-
-            ForEach(groups, id: \.day) { group in
-                Section {
-                    ForEach(group.records) { record in
-                        NavigationLink(value: record) {
-                            RecordRow(record: record)
-                        }
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) {
-                                delete(record)
-                            } label: {
-                                Label("删除", systemImage: "trash")
-                            }
-                            Button {
-                                router.edit(record)
-                            } label: {
-                                Label("编辑", systemImage: "pencil")
-                            }
-                            .tint(.orange)
-                        }
-                        .swipeActions(edge: .leading) {
-                            Button {
-                                duplicate(record)
-                            } label: {
-                                Label("复制", systemImage: "plus.square.on.square")
-                            }
-                            .tint(.blue)
-                        }
-                        .contextMenu {
-                            RecordContextMenu(record: record, onDuplicate: duplicate, onDelete: delete)
-                        }
+                if records.isEmpty {
+                    ContentUnavailableView {
+                        Label("这个月还没有记录", systemImage: "moon.zzz")
+                    } description: {
+                        Text("点按下方「记一笔」，或对 Siri 说“用 MoonMoney 记一笔”。")
+                    } actions: {
+                        Button("记一笔") { router.newRecord() }
+                            .buttonStyle(.glassProminent)
                     }
-                } header: {
-                    DayHeader(day: group.day, records: group.records)
+                    .plainListRow()
+                }
+
+                ForEach(groups, id: \.day) { group in
+                    Section {
+                        ForEach(group.records) { record in
+                            NavigationLink(value: record) {
+                                RecordRow(record: record)
+                            }
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    delete(record)
+                                } label: {
+                                    Label("删除", systemImage: "trash")
+                                }
+                                Button {
+                                    router.edit(record)
+                                } label: {
+                                    Label("编辑", systemImage: "pencil")
+                                }
+                                .tint(.orange)
+                            }
+                            .swipeActions(edge: .leading) {
+                                Button {
+                                    duplicate(record)
+                                } label: {
+                                    Label("复制", systemImage: "plus.square.on.square")
+                                }
+                                .tint(.blue)
+                            }
+                            .contextMenu {
+                                RecordContextMenu(record: record, onDuplicate: duplicate, onDelete: delete)
+                            }
+                        }
+                    } header: {
+                        DayHeader(day: group.day, records: group.records)
+                    }
                 }
             }
+            .listRowBackground(GlassRowBackground())
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)

@@ -46,61 +46,64 @@ struct AccountEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    HStack(spacing: 14) {
-                        CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true)
-                        TextField("账户名称", text: $name)
-                            .font(.title3.weight(.semibold))
-                    }
-                    Picker("类型", selection: $type) {
-                        ForEach(AccountType.allCases) { type in
-                            Label(type.title, systemImage: type.defaultSymbol).tag(type)
-                        }
-                    }
-                    .onChange(of: type) { oldValue, newValue in
-                        if symbol == oldValue.defaultSymbol { symbol = newValue.defaultSymbol }
-                    }
-                    Picker("币种", selection: $currency) {
-                        ForEach(currencyOptions, id: \.self) { code in
-                            Text("\(code) · \(Currencies.name(code))").tag(code)
-                        }
-                    }
-                }
-
-                Section {
-                    CentsField(title: type == .credit ? "当前余额（欠款为负）" : "当前余额", cents: $balanceCents, code: currency)
-                    if type == .credit {
-                        CentsField(title: "信用额度", cents: $creditLimitCents, code: currency)
-                        Picker("账单日", selection: $billingDay) {
-                            Text("不设置").tag(0)
-                            ForEach(1...28, id: \.self) { Text("每月\($0)日").tag($0) }
-                        }
-                        Picker("还款日", selection: $dueDay) {
-                            Text("不设置").tag(0)
-                            ForEach(1...28, id: \.self) { Text("每月\($0)日").tag($0) }
-                        }
-                    }
-                    Toggle("计入净资产", isOn: $includeInNetWorth)
-                    Toggle("设为默认记账账户", isOn: $isDefault)
-                    TextField("备注（如卡号后四位）", text: $note)
-                }
-
-                Section("颜色") {
-                    ColorSwatchPicker(hex: $colorHex)
-                }
-
-                Section("图标") {
-                    SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex))
-                        .padding(.vertical, 6)
-                }
-
-                if account != nil && allowsDelete {
+                Group {
                     Section {
-                        Button("删除账户", role: .destructive) { confirmDelete = true }
-                    } footer: {
-                        Text("删除后，相关账单会保留但不再关联此账户。若只是不再使用，建议在列表中左滑归档。")
+                        HStack(spacing: 14) {
+                            CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true)
+                            TextField("账户名称", text: $name)
+                                .font(.title3.weight(.semibold))
+                        }
+                        Picker("类型", selection: $type) {
+                            ForEach(AccountType.allCases) { type in
+                                Label(type.title, systemImage: type.defaultSymbol).tag(type)
+                            }
+                        }
+                        .onChange(of: type) { oldValue, newValue in
+                            if symbol == oldValue.defaultSymbol { symbol = newValue.defaultSymbol }
+                        }
+                        Picker("币种", selection: $currency) {
+                            ForEach(currencyOptions, id: \.self) { code in
+                                Text("\(code) · \(Currencies.name(code))").tag(code)
+                            }
+                        }
+                    }
+
+                    Section {
+                        CentsField(title: type == .credit ? "当前余额（欠款为负）" : "当前余额", cents: $balanceCents, code: currency)
+                        if type == .credit {
+                            CentsField(title: "信用额度", cents: $creditLimitCents, code: currency)
+                            Picker("账单日", selection: $billingDay) {
+                                Text("不设置").tag(0)
+                                ForEach(1...28, id: \.self) { Text("每月\($0)日").tag($0) }
+                            }
+                            Picker("还款日", selection: $dueDay) {
+                                Text("不设置").tag(0)
+                                ForEach(1...28, id: \.self) { Text("每月\($0)日").tag($0) }
+                            }
+                        }
+                        Toggle("计入净资产", isOn: $includeInNetWorth)
+                        Toggle("设为默认记账账户", isOn: $isDefault)
+                        TextField("备注（如卡号后四位）", text: $note)
+                    }
+
+                    Section("颜色") {
+                        ColorSwatchPicker(hex: $colorHex)
+                    }
+
+                    Section("图标") {
+                        SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex))
+                            .padding(.vertical, 6)
+                    }
+
+                    if account != nil && allowsDelete {
+                        Section {
+                            Button("删除账户", role: .destructive) { confirmDelete = true }
+                        } footer: {
+                            Text("删除后，相关账单会保留但不再关联此账户。若只是不再使用，建议在列表中左滑归档。")
+                        }
                     }
                 }
+                .listRowBackground(GlassRowBackground())
             }
             .pageBackground()
             .navigationTitle(account == nil ? "新建账户" : "编辑账户")

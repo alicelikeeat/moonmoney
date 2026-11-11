@@ -18,166 +18,169 @@ struct SettingsView: View {
 
         NavigationStack {
             List {
-                profileCard
-                    .plainListRow(top: 8, bottom: 8)
+                Group {
+                    profileCard
+                        .plainListRow(top: 8, bottom: 8)
 
-                Section("智能") {
-                    Button {
-                        Router.shared.showAIEntry = true
-                    } label: {
-                        SettingsLabel("AI 一句话记账", symbol: "sparkles", color: .purple)
-                    }
-                    NavigationLink { AutoBookkeepingGuideView() } label: {
-                        SettingsLabel("自动记账（Apple Pay / 截图）", symbol: "bolt.fill", color: .orange)
-                    }
-                    NavigationLink { ReportsView() } label: {
-                        SettingsLabel("月报与年度账单", symbol: "doc.richtext.fill", color: .pink)
-                    }
-                    Toggle(isOn: $settings.aiEnabled) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            SettingsLabel("使用 Apple 智能", symbol: "apple.intelligence", color: .indigo)
-                            Text("状态：\(SmartParser.aiStatusText)").font(.caption2).foregroundStyle(.secondary)
-                                .padding(.leading, 40)
+                    Section("智能") {
+                        Button {
+                            Router.shared.showAIEntry = true
+                        } label: {
+                            SettingsLabel("AI 一句话记账", symbol: "sparkles", color: .purple)
                         }
-                    }
-                }
-
-                Section("理财") {
-                    NavigationLink { SavingsGoalsView() } label: {
-                        SettingsLabel("存钱目标", symbol: "star.circle.fill", color: .orange)
-                    }
-                    NavigationLink { DebtsView() } label: {
-                        SettingsLabel("借贷", symbol: "person.2.fill", color: .teal)
-                    }
-                    NavigationLink { ReimbursementsView() } label: {
-                        SettingsLabel("报销", symbol: "doc.text.fill", color: .cyan)
-                    }
-                }
-
-                Section("个性化") {
-                    NavigationLink { BackgroundSettingsView() } label: {
-                        SettingsLabel("自定义背景（图片 / GIF / 视频）", symbol: "photo.fill", color: .pink)
-                    }
-                    NavigationLink { AppIconPickerView() } label: {
-                        SettingsLabel("App 图标", symbol: "app.badge.fill", color: .blue)
-                    }
-                    NavigationLink { MembersView() } label: {
-                        SettingsLabel("家庭成员", symbol: "person.3.fill", color: .green)
-                    }
-                    NavigationLink { ReminderSettingsView() } label: {
-                        SettingsLabel("提醒", symbol: "bell.badge.fill", color: .red)
-                    }
-                }
-
-                Section("记账") {
-                    NavigationLink { BudgetView() } label: {
-                        SettingsLabel("预算", symbol: "target", color: .green)
-                    }
-                    NavigationLink { RecurringListView() } label: {
-                        SettingsLabel("周期记账", symbol: "repeat", color: .purple)
-                    }
-                    NavigationLink { CategoryManagerView(initialKind: .expense) } label: {
-                        SettingsLabel("分类管理", symbol: "square.grid.2x2.fill", color: .orange)
-                    }
-                    NavigationLink { TagManagerView() } label: {
-                        SettingsLabel("标签管理", symbol: "number", color: .cyan)
-                    }
-                    NavigationLink { LedgerManagerView() } label: {
-                        SettingsLabel("账本管理", symbol: "books.vertical.fill", color: .indigo)
-                    }
-                }
-
-                Section("偏好") {
-                    Picker(selection: $settings.baseCurrency) {
-                        ForEach(Currencies.common, id: \.self) { code in
-                            Text("\(code) · \(Currencies.name(code))").tag(code)
+                        NavigationLink { AutoBookkeepingGuideView() } label: {
+                            SettingsLabel("自动记账（Apple Pay / 截图）", symbol: "bolt.fill", color: .orange)
                         }
-                    } label: {
-                        SettingsLabel("本位币", symbol: "yensign.circle.fill", color: .yellow)
-                    }
-                    NavigationLink { ExchangeRatesView() } label: {
-                        SettingsLabel("汇率", symbol: "arrow.left.arrow.right.circle.fill", color: .teal)
-                    }
-                    Picker(selection: $settings.monthStartDay) {
-                        ForEach(1...28, id: \.self) { day in
-                            Text("每月 \(day) 日").tag(day)
+                        NavigationLink { ReportsView() } label: {
+                            SettingsLabel("月报与年度账单", symbol: "doc.richtext.fill", color: .pink)
                         }
-                    } label: {
-                        SettingsLabel("每月起始日", symbol: "calendar.badge.clock", color: .red)
-                    }
-                    Toggle(isOn: $settings.weekStartsOnMonday) {
-                        SettingsLabel("每周从周一开始", symbol: "calendar", color: .blue)
-                    }
-                    Toggle(isOn: $settings.continuousEntry) {
-                        SettingsLabel("连续记账", symbol: "square.stack.3d.up.fill", color: .mint)
-                    }
-                    Toggle(isOn: $settings.hapticsEnabled) {
-                        SettingsLabel("触感反馈", symbol: "iphone.radiowaves.left.and.right", color: .pink)
-                    }
-                }
-
-                Section {
-                    Toggle(isOn: Binding(
-                        get: { settings.lockEnabled },
-                        set: { newValue in
-                            if newValue {
-                                Task {
-                                    if await AppLock.verify() { settings.lockEnabled = true }
-                                }
-                            } else {
-                                settings.lockEnabled = false
+                        Toggle(isOn: $settings.aiEnabled) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                SettingsLabel("使用 Apple 智能", symbol: "apple.intelligence", color: .indigo)
+                                Text("状态：\(SmartParser.aiStatusText)").font(.caption2).foregroundStyle(.secondary)
+                                    .padding(.leading, 40)
                             }
                         }
-                    )) {
-                        SettingsLabel("面容 ID 锁", symbol: "faceid", color: .green)
                     }
-                } header: {
-                    Text("隐私")
-                } footer: {
-                    Text("开启后，每次回到 App 都需要验证身份，并在多任务界面隐藏金额。")
-                }
 
-                Section {
-                    LabeledContent {
-                        Text(iCloudAvailable ? "已登录" : "未登录")
-                            .foregroundStyle(iCloudAvailable ? Color.income : Color.secondary)
-                    } label: {
-                        SettingsLabel("iCloud 同步", symbol: "icloud.fill", color: .blue)
+                    Section("理财") {
+                        NavigationLink { SavingsGoalsView() } label: {
+                            SettingsLabel("存钱目标", symbol: "star.circle.fill", color: .orange)
+                        }
+                        NavigationLink { DebtsView() } label: {
+                            SettingsLabel("借贷", symbol: "person.2.fill", color: .teal)
+                        }
+                        NavigationLink { ReimbursementsView() } label: {
+                            SettingsLabel("报销", symbol: "doc.text.fill", color: .cyan)
+                        }
                     }
-                    LabeledContent {
-                        Text(AppGroup.storeMode.rawValue)
-                            .font(.footnote)
-                            .foregroundStyle(AppGroup.storeMode == .memory ? Color.expense : Color.secondary)
-                    } label: {
-                        SettingsLabel("数据存储", symbol: "internaldrive.fill", color: .gray)
-                    }
-                    Button {
-                        export()
-                    } label: {
-                        SettingsLabel("导出 CSV", symbol: "square.and.arrow.up.fill", color: .gray)
-                    }
-                    Button {
-                        importing = true
-                    } label: {
-                        SettingsLabel("从 CSV 导入", symbol: "square.and.arrow.down.fill", color: .gray)
-                    }
-                    Button {
-                        confirmSample = true
-                    } label: {
-                        SettingsLabel("生成示例数据", symbol: "wand.and.stars", color: .purple)
-                    }
-                } header: {
-                    Text("数据")
-                } footer: {
-                    Text("在 Xcode 中为 App 开启 iCloud（CloudKit）能力后，数据会自动在你的设备间同步。")
-                }
 
-                Section {
-                    LabeledContent("版本", value: appVersion)
-                    Link(destination: URL(string: "https://support.apple.com/zh-cn/guide/shortcuts/welcome/ios")!) {
-                        SettingsLabel("Siri 与快捷指令：说“用 MoonMoney 记一笔”", symbol: "waveform", color: .indigo)
+                    Section("个性化") {
+                        NavigationLink { BackgroundSettingsView() } label: {
+                            SettingsLabel("自定义背景（图片 / GIF / 视频）", symbol: "photo.fill", color: .pink)
+                        }
+                        NavigationLink { AppIconPickerView() } label: {
+                            SettingsLabel("App 图标", symbol: "app.badge.fill", color: .blue)
+                        }
+                        NavigationLink { MembersView() } label: {
+                            SettingsLabel("家庭成员", symbol: "person.3.fill", color: .green)
+                        }
+                        NavigationLink { ReminderSettingsView() } label: {
+                            SettingsLabel("提醒", symbol: "bell.badge.fill", color: .red)
+                        }
+                    }
+
+                    Section("记账") {
+                        NavigationLink { BudgetView() } label: {
+                            SettingsLabel("预算", symbol: "target", color: .green)
+                        }
+                        NavigationLink { RecurringListView() } label: {
+                            SettingsLabel("周期记账", symbol: "repeat", color: .purple)
+                        }
+                        NavigationLink { CategoryManagerView(initialKind: .expense) } label: {
+                            SettingsLabel("分类管理", symbol: "square.grid.2x2.fill", color: .orange)
+                        }
+                        NavigationLink { TagManagerView() } label: {
+                            SettingsLabel("标签管理", symbol: "number", color: .cyan)
+                        }
+                        NavigationLink { LedgerManagerView() } label: {
+                            SettingsLabel("账本管理", symbol: "books.vertical.fill", color: .indigo)
+                        }
+                    }
+
+                    Section("偏好") {
+                        Picker(selection: $settings.baseCurrency) {
+                            ForEach(Currencies.common, id: \.self) { code in
+                                Text("\(code) · \(Currencies.name(code))").tag(code)
+                            }
+                        } label: {
+                            SettingsLabel("本位币", symbol: "yensign.circle.fill", color: .yellow)
+                        }
+                        NavigationLink { ExchangeRatesView() } label: {
+                            SettingsLabel("汇率", symbol: "arrow.left.arrow.right.circle.fill", color: .teal)
+                        }
+                        Picker(selection: $settings.monthStartDay) {
+                            ForEach(1...28, id: \.self) { day in
+                                Text("每月 \(day) 日").tag(day)
+                            }
+                        } label: {
+                            SettingsLabel("每月起始日", symbol: "calendar.badge.clock", color: .red)
+                        }
+                        Toggle(isOn: $settings.weekStartsOnMonday) {
+                            SettingsLabel("每周从周一开始", symbol: "calendar", color: .blue)
+                        }
+                        Toggle(isOn: $settings.continuousEntry) {
+                            SettingsLabel("连续记账", symbol: "square.stack.3d.up.fill", color: .mint)
+                        }
+                        Toggle(isOn: $settings.hapticsEnabled) {
+                            SettingsLabel("触感反馈", symbol: "iphone.radiowaves.left.and.right", color: .pink)
+                        }
+                    }
+
+                    Section {
+                        Toggle(isOn: Binding(
+                            get: { settings.lockEnabled },
+                            set: { newValue in
+                                if newValue {
+                                    Task {
+                                        if await AppLock.verify() { settings.lockEnabled = true }
+                                    }
+                                } else {
+                                    settings.lockEnabled = false
+                                }
+                            }
+                        )) {
+                            SettingsLabel("面容 ID 锁", symbol: "faceid", color: .green)
+                        }
+                    } header: {
+                        Text("隐私")
+                    } footer: {
+                        Text("开启后，每次回到 App 都需要验证身份，并在多任务界面隐藏金额。")
+                    }
+
+                    Section {
+                        LabeledContent {
+                            Text(iCloudAvailable ? "已登录" : "未登录")
+                                .foregroundStyle(iCloudAvailable ? Color.income : Color.secondary)
+                        } label: {
+                            SettingsLabel("iCloud 同步", symbol: "icloud.fill", color: .blue)
+                        }
+                        LabeledContent {
+                            Text(AppGroup.storeMode.rawValue)
+                                .font(.footnote)
+                                .foregroundStyle(AppGroup.storeMode == .memory ? Color.expense : Color.secondary)
+                        } label: {
+                            SettingsLabel("数据存储", symbol: "internaldrive.fill", color: .gray)
+                        }
+                        Button {
+                            export()
+                        } label: {
+                            SettingsLabel("导出 CSV", symbol: "square.and.arrow.up.fill", color: .gray)
+                        }
+                        Button {
+                            importing = true
+                        } label: {
+                            SettingsLabel("从 CSV 导入", symbol: "square.and.arrow.down.fill", color: .gray)
+                        }
+                        Button {
+                            confirmSample = true
+                        } label: {
+                            SettingsLabel("生成示例数据", symbol: "wand.and.stars", color: .purple)
+                        }
+                    } header: {
+                        Text("数据")
+                    } footer: {
+                        Text("在 Xcode 中为 App 开启 iCloud（CloudKit）能力后，数据会自动在你的设备间同步。")
+                    }
+
+                    Section {
+                        LabeledContent("版本", value: appVersion)
+                        Link(destination: URL(string: "https://support.apple.com/zh-cn/guide/shortcuts/welcome/ios")!) {
+                            SettingsLabel("Siri 与快捷指令：说“用 MoonMoney 记一笔”", symbol: "waveform", color: .indigo)
+                        }
                     }
                 }
+                .listRowBackground(GlassRowBackground())
             }
             .scrollContentBackground(.hidden)
             .background { AmbientBackground(tint: .indigo) }

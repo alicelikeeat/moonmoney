@@ -16,68 +16,71 @@ struct AccountsView: View {
 
         NavigationStack {
             List {
-                NetWorthCard(assets: totals.assets, liabilities: totals.liabilities)
-                    .plainListRow(top: 8, bottom: 8)
+                Group {
+                    NetWorthCard(assets: totals.assets, liabilities: totals.liabilities)
+                        .plainListRow(top: 8, bottom: 8)
 
-                if accounts.contains(where: { !($0.records ?? []).isEmpty }) {
-                    NetWorthTrend(accounts: accounts.filter { !$0.isArchived && $0.includeInNetWorth })
-                        .plainListRow(top: 0, bottom: 8)
-                }
+                    if accounts.contains(where: { !($0.records ?? []).isEmpty }) {
+                        NetWorthTrend(accounts: accounts.filter { !$0.isArchived && $0.includeInNetWorth })
+                            .plainListRow(top: 0, bottom: 8)
+                    }
 
-                ForEach(AccountType.allCases) { type in
-                    let group = visible.filter { $0.type == type }
-                    if !group.isEmpty {
-                        Section {
-                            ForEach(group) { account in
-                                NavigationLink(value: account) {
-                                    AccountRow(account: account)
-                                }
-                                .swipeActions {
-                                    Button {
-                                        editing = account
-                                    } label: {
-                                        Label("编辑", systemImage: "pencil")
+                    ForEach(AccountType.allCases) { type in
+                        let group = visible.filter { $0.type == type }
+                        if !group.isEmpty {
+                            Section {
+                                ForEach(group) { account in
+                                    NavigationLink(value: account) {
+                                        AccountRow(account: account)
                                     }
-                                    .tint(.orange)
-                                    Button {
-                                        account.isArchived.toggle()
-                                        try? context.save()
-                                    } label: {
-                                        Label(account.isArchived ? "取消归档" : "归档", systemImage: "archivebox")
+                                    .swipeActions {
+                                        Button {
+                                            editing = account
+                                        } label: {
+                                            Label("编辑", systemImage: "pencil")
+                                        }
+                                        .tint(.orange)
+                                        Button {
+                                            account.isArchived.toggle()
+                                            try? context.save()
+                                        } label: {
+                                            Label(account.isArchived ? "取消归档" : "归档", systemImage: "archivebox")
+                                        }
+                                        .tint(.gray)
                                     }
-                                    .tint(.gray)
-                                }
-                                .swipeActions(edge: .leading) {
-                                    Button {
-                                        router.newRecord(kind: .transfer, account: account)
-                                    } label: {
-                                        Label("转账", systemImage: "arrow.left.arrow.right")
+                                    .swipeActions(edge: .leading) {
+                                        Button {
+                                            router.newRecord(kind: .transfer, account: account)
+                                        } label: {
+                                            Label("转账", systemImage: "arrow.left.arrow.right")
+                                        }
+                                        .tint(.blue)
                                     }
-                                    .tint(.blue)
                                 }
-                            }
-                            .onMove { indices, destination in
-                                move(group, from: indices, to: destination)
-                            }
-                        } header: {
-                            HStack {
-                                Text(type.title)
-                                Spacer()
-                                let sum = group.filter { !$0.isArchived }.reduce(0) {
-                                    $0 + AppSettings.shared.convertToBase($1.balanceCents, from: $1.currencyCode)
+                                .onMove { indices, destination in
+                                    move(group, from: indices, to: destination)
                                 }
-                                Text(Money.format(sum)).monospacedDigit()
+                            } header: {
+                                HStack {
+                                    Text(type.title)
+                                    Spacer()
+                                    let sum = group.filter { !$0.isArchived }.reduce(0) {
+                                        $0 + AppSettings.shared.convertToBase($1.balanceCents, from: $1.currencyCode)
+                                    }
+                                    Text(Money.format(sum)).monospacedDigit()
+                                }
+                                .textCase(nil)
                             }
-                            .textCase(nil)
                         }
                     }
-                }
 
-                if accounts.isEmpty {
-                    ContentUnavailableView("还没有账户", systemImage: "wallet.bifold",
-                                           description: Text("添加现金、银行卡、信用卡或网络账户，余额会随记账自动变化。"))
-                        .plainListRow()
+                    if accounts.isEmpty {
+                        ContentUnavailableView("还没有账户", systemImage: "wallet.bifold",
+                                               description: Text("添加现金、银行卡、信用卡或网络账户，余额会随记账自动变化。"))
+                            .plainListRow()
+                    }
                 }
+                .listRowBackground(GlassRowBackground())
             }
             .scrollContentBackground(.hidden)
             .background { AmbientBackground(tint: .teal) }
@@ -248,22 +251,25 @@ struct AccountDetailView: View {
     var body: some View {
         let records = allRecords
         List {
-            header
-                .plainListRow(top: 8, bottom: 8)
+            Group {
+                header
+                    .plainListRow(top: 8, bottom: 8)
 
-            if records.count > 1 {
-                trend.plainListRow()
-            }
+                if records.count > 1 {
+                    trend.plainListRow()
+                }
 
-            ForEach(Stats.groupedByDay(Array(records.prefix(300))), id: \.day) { group in
-                Section(group.day.dayHeaderTitle) {
-                    ForEach(group.records) { record in
-                        NavigationLink(value: record) {
-                            RecordRow(record: record)
+                ForEach(Stats.groupedByDay(Array(records.prefix(300))), id: \.day) { group in
+                    Section(group.day.dayHeaderTitle) {
+                        ForEach(group.records) { record in
+                            NavigationLink(value: record) {
+                                RecordRow(record: record)
+                            }
                         }
                     }
                 }
             }
+            .listRowBackground(GlassRowBackground())
         }
         .scrollContentBackground(.hidden)
         .background { AmbientBackground(tint: account.color) }
