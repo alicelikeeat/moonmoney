@@ -1,6 +1,7 @@
 import AppIntents
 import Foundation
 import SwiftData
+import UniformTypeIdentifiers
 
 // MARK: - Entities
 
@@ -125,59 +126,96 @@ struct AddRecordIntent: AppIntent {
     @Parameter(title: "备注")
     var note: String?
 
+    @Parameter(title: "商户", description: "来自钱包交易自动化的商户名，会用来自动判断分类")
+    var merchant: String?
+
     static var parameterSummary: some ParameterSummary {
         Summary("记录 \(\.$kind) \(\.$amount) 元") {
             \.$category
             \.$account
             \.$note
+            \.$merchant
         }
     }
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let context = DataStore.context
-        let recordKind = kind.kind
-        var resolvedCategory = DataStore.category(category?.id, in: context)
-        if resolvedCategory == nil {
-            let kindRaw = recordKind.rawValue
-            var descriptor = FetchDescriptor<BillCategory>(
-                predicate: #Predicate<BillCategory> { $0.kindRaw == kindRaw && !$0.isArchived },
-                sortBy: [SortDescriptor(\.order)]
-            )
-            descriptor.fetchLimit = 1
-            resolvedCategory = try? context.fetch(descriptor).first
-        }
-        let resolvedAccount = DataStore.account(account?.id, in: context) ?? DataStore.defaultAccount(in: context)
         guard amount > 0 else {
             return .result(dialog: "金额需要大于 0")
         }
+        let context = DataStore.context
+        let catalog = Catalog(context: context)
+        let recordKind = kind.kind
+        let merchantText = merchant?.trimmingCharacters(in: .whitespaces) ?? ""
+        let noteText = [note ?? "", merchantText].filter { !$0.isEmpty }.joined(separator: " ")
+
+        let resolvedCategory = DataStore.category(category?.id, in: context)
+            ?? catalog.guessCategory(for: noteText, kind: recordKind)
+            ?? catalog.categories.first { $0.kind == recordKind }
+        let resolvedAccount = DataStore.account(account?.id, in: context)
+            ?? catalog.account(mentionedIn: merchantText)
+            ?? DataStore.defaultAccount(in: context)
+
         let record = Record(
             kind: recordKind,
             amountCents: Money.cents(amount),
-            note: note ?? "",
+            note: noteText,
             category: resolvedCategory,
             account: resolvedAccount,
             ledgerID: AppSettings.shared.currentLedgerID
         )
         context.insert(record)
         try context.save()
+        AppServices.recordsChanged([record], context: context)
 
         let text = "已记录\(recordKind.title) \(Money.format(record.amountCents, code: record.currencyCode))（\(resolvedCategory?.name ?? "未分类")）"
         return .result(dialog: "\(text)")
     }
 }
 
-/// Opens the app straight into the entry sheet.
-struct OpenEntryIntent: AppIntent {
-    static let title: LocalizedStringResource = "打开记账面板"
-    static let description = IntentDescription("打开 MoonMoney 并直接进入记一笔。")
-    static let openAppWhenRun = true
+/// "用 MoonMoney 智能记账"：一句话记多笔。
+struct SmartRecordIntent: AppIntent {
+    static let title: LocalizedStringResource = "智能记账"
+    static let description = IntentDescription("用一句话记账，例如“午饭 32，打车 18 用微信”，自动拆分并识别分类。")
+
+    @Parameter(title: "内容", requestValueDialog: "说说你花了什么？")
+    var text: String
 
     @MainActor
-    func perform() async throws -> some IntentResult {
-        Router.shared.tab = .home
-        Router.shared.newRecord()
-        return .result()
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let context = DataStore.context
+        let result = await SmartParser.parse(text, context: context)
+        guard !result.drafts.isEmpty else {
+            return .result(dialog: "没有找到金额，换个说法试试，比如“午饭 32”")
+        }
+        let saved = SmartParser.save(result.drafts, context: context)
+        let total = saved.reduce(0) { $0 + $1.amountCents }
+        let names = saved.map(\.displayTitle).joined(separator: "、")
+        return .result(dialog: "已记录 \(saved.count) 笔，共 \(Money.format(total))：\(names)")
+    }
+}
+
+/// Reads a payment screenshot (e.g. from Back Tap or the share sheet) and records it.
+struct ScreenshotRecordIntent: AppIntent {
+    static let title: LocalizedStringResource = "截图记账"
+    static let description = IntentDescription("识别支付宝、微信等支付成功截图中的金额和商户，自动记一笔。")
+
+    @Parameter(title: "截图", supportedContentTypes: [.image])
+    var screenshot: IntentFile
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let context = DataStore.context
+        let result = await SmartParser.parseScreenshot(screenshot.data, context: context)
+        guard !result.drafts.isEmpty else {
+            return .result(dialog: "没能在截图里找到金额")
+        }
+        let saved = SmartParser.save(result.drafts, context: context)
+        guard let record = saved.first else {
+            return .result(dialog: "没能在截图里找到金额")
+        }
+        let label = record.note.isEmpty ? record.displayTitle : "\(record.displayTitle) · \(record.note)"
+        return .result(dialog: "已记录 \(label) \(Money.format(record.amountCents, code: record.currencyCode))")
     }
 }
 
@@ -225,6 +263,18 @@ struct MoonMoneyShortcuts: AppShortcutsProvider {
             phrases: ["打开\(.applicationName)记账面板"],
             shortTitle: "打开记账",
             systemImageName: "square.and.pencil"
+        )
+        AppShortcut(
+            intent: SmartRecordIntent(),
+            phrases: ["用\(.applicationName)智能记账", "\(.applicationName)一句话记账"],
+            shortTitle: "智能记账",
+            systemImageName: "sparkles"
+        )
+        AppShortcut(
+            intent: ScreenshotRecordIntent(),
+            phrases: ["用\(.applicationName)截图记账"],
+            shortTitle: "截图记账",
+            systemImageName: "text.viewfinder"
         )
         AppShortcut(
             intent: MonthSpendingIntent(),

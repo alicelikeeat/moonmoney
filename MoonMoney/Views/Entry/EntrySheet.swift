@@ -28,6 +28,12 @@ struct EntrySheet: View {
     @State private var excluded: Bool
     @State private var feeCents: Int
     @State private var toAmountCents: Int
+    @State private var member: String
+    @State private var reimbursement: ReimbursementState
+    @State private var installments = 1
+    @State private var installmentFeeRate = 0.0
+    @State private var categoryTouched = false
+    @State private var showAI = false
 
     @State private var showTags = false
     @State private var showCategoryManager = false
@@ -53,6 +59,9 @@ struct EntrySheet: View {
         _excluded = State(initialValue: record?.excludedFromStats ?? false)
         _feeCents = State(initialValue: record?.feeCents ?? 0)
         _toAmountCents = State(initialValue: record?.toAmountCents ?? 0)
+        _member = State(initialValue: record?.member ?? "")
+        _reimbursement = State(initialValue: record?.reimbursement ?? .notNeeded)
+        _categoryTouched = State(initialValue: record != nil)
     }
 
     private var kindCategories: [BillCategory] {
@@ -78,7 +87,10 @@ struct EntrySheet: View {
                     } else {
                         CategoryGrid(
                             categories: kindCategories,
-                            selection: $category,
+                            selection: Binding(
+                                get: { category },
+                                set: { category = $0; categoryTouched = true }
+                            ),
                             onManage: { showCategoryManager = true }
                         )
                     }
@@ -117,6 +129,12 @@ struct EntrySheet: View {
                 category = categories.first { $0.kind == newKind }
             }
         }
+        .onChange(of: note) { _, text in
+            suggestCategory(for: text)
+        }
+        .sheet(isPresented: $showAI) {
+            AIEntrySheet()
+        }
         .onChange(of: photoItem) { _, item in
             guard let item else { return }
             Task {
@@ -128,11 +146,13 @@ struct EntrySheet: View {
         .confirmationDialog("删除这笔账单？", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("删除", role: .destructive) {
                 if let record = request.record {
+                    let id = record.uuid
                     dismiss()
                     Task {
                         try? await Task.sleep(for: .milliseconds(400))
                         context.delete(record)
                         try? context.save()
+                        AppServices.recordDeleted(id)
                     }
                 }
             }
@@ -158,6 +178,10 @@ struct EntrySheet: View {
         if isEditing {
             ToolbarItem(placement: .destructiveAction) {
                 Button("删除", systemImage: "trash", role: .destructive) { confirmDelete = true }
+            }
+        } else {
+            ToolbarItem(placement: .primaryAction) {
+                Button("AI 记账", systemImage: "sparkles") { showAI = true }
             }
         }
     }
@@ -269,6 +293,46 @@ struct EntrySheet: View {
                         }
                     }
 
+                    if !settings.members.isEmpty {
+                        Menu {
+                            Picker("成员", selection: $member) {
+                                Text("不指定").tag("")
+                                ForEach(settings.members, id: \.self) { Text($0).tag($0) }
+                            }
+                        } label: {
+                            GlassChip(title: member.isEmpty ? "成员" : member, symbol: "person.fill",
+                                      tint: .indigo, isActive: !member.isEmpty)
+                        }
+                    }
+
+                    if kind == .expense {
+                        Button {
+                            reimbursement = reimbursement == .notNeeded ? .pending : .notNeeded
+                            Haptics.tap()
+                        } label: {
+                            GlassChip(title: reimbursement == .notNeeded ? "报销" : reimbursement.title,
+                                      symbol: "doc.text.fill", tint: .cyan, isActive: reimbursement != .notNeeded)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    if kind == .expense && !isEditing {
+                        Menu {
+                            Picker("期数", selection: $installments) {
+                                Text("不分期").tag(1)
+                                ForEach([3, 6, 9, 12, 24], id: \.self) { Text("\($0) 期").tag($0) }
+                            }
+                            Picker("每期手续费率", selection: $installmentFeeRate) {
+                                ForEach([0.0, 0.5, 0.6, 0.75, 1.0], id: \.self) { rate in
+                                    Text(rate == 0 ? "免息" : "\(rate.formatted())%").tag(rate)
+                                }
+                            }
+                        } label: {
+                            GlassChip(title: installments > 1 ? "分 \(installments) 期" : "分期",
+                                      symbol: "square.stack.3d.down.right.fill", tint: .pink, isActive: installments > 1)
+                        }
+                    }
+
                     Button {
                         excluded.toggle()
                         Haptics.tap()
@@ -299,6 +363,46 @@ struct EntrySheet: View {
         }
     }
 
+    private func suggestCategory(for text: String) {
+        guard !categoryTouched, kind != .transfer, text.count >= 2 else { return }
+        let catalog = Catalog(context: context)
+        if let guess = catalog.guessCategory(for: text, kind: kind), guess.uuid != category?.uuid {
+            withAnimation(.snappy) { category = guess }
+        }
+    }
+
+    /// Splits one purchase into monthly installments on the chosen account.
+    private func saveInstallments(total: Int) {
+        let count = installments
+        let base = total / count
+        let remainder = total - base * count
+        let fee = Int((Double(total) * installmentFeeRate / 100).rounded())
+        let group = UUID()
+        let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        var created: [Record] = []
+        for index in 0..<count {
+            let when = Calendar.current.date(byAdding: .month, value: index, to: date) ?? date
+            let amount = base + (index == 0 ? remainder : 0) + fee
+            let record = Record(kind: .expense, amountCents: amount, date: when,
+                                note: "\(trimmed.isEmpty ? "分期" : trimmed)（\(index + 1)/\(count)）",
+                                category: category ?? kindCategories.first, account: account,
+                                ledgerID: settings.currentLedgerID)
+            record.installmentGroup = group
+            record.installmentIndex = index + 1
+            record.installmentCount = count
+            record.tags = tags
+            record.member = member
+            record.excludedFromStats = excluded
+            if index == 0 { record.photo = photo }
+            context.insert(record)
+            created.append(record)
+        }
+        try? context.save()
+        AppServices.recordsChanged(created, context: context)
+        Haptics.success()
+        dismiss()
+    }
+
     private func save(again: Bool) {
         if keypad.hasOperator {
             keypad.commit()
@@ -319,6 +423,11 @@ struct EntrySheet: View {
             }
         }
 
+        if installments > 1 && kind == .expense && !isEditing {
+            saveInstallments(total: cents)
+            return
+        }
+
         let record: Record
         if let existing = request.record {
             record = existing
@@ -336,6 +445,8 @@ struct EntrySheet: View {
         record.photo = photo
         record.tags = tags
         record.updatedAt = .now
+        record.member = member
+        record.reimbursement = kind == .expense ? reimbursement : .notNeeded
         if kind == .transfer {
             record.category = nil
             record.toAccount = toAccount
@@ -348,6 +459,7 @@ struct EntrySheet: View {
             record.toAmountCents = 0
         }
         try? context.save()
+        AppServices.recordsChanged([record], context: context)
         Haptics.success()
 
         if (again || settings.continuousEntry) && !isEditing {
@@ -359,6 +471,7 @@ struct EntrySheet: View {
                 photoItem = nil
                 feeCents = 0
                 toAmountCents = 0
+                categoryTouched = false
                 savedToast = message
             }
             Task {

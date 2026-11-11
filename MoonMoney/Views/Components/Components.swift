@@ -28,8 +28,16 @@ struct AmbientBackground: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
+        if BackgroundStore.shared.isActive {
+            CustomBackgroundView()
+        } else {
+            mesh
+        }
+    }
+
+    private var mesh: some View {
         let base: Color = scheme == .dark ? .black : Color(white: 0.97)
-        MeshGradient(
+        return MeshGradient(
             width: 3, height: 3,
             points: [
                 [0, 0], [0.5, 0], [1, 0],
@@ -56,8 +64,8 @@ struct CategoryIcon: View {
     var filled = false
 
     var body: some View {
-        Image(systemName: symbol)
-            .font(.system(size: size * 0.44, weight: .semibold))
+        SymbolGlyph(symbol)
+            .font(.system(size: size * (SymbolGlyph.isEmoji(symbol) ? 0.52 : 0.44), weight: .semibold))
             .symbolRenderingMode(.hierarchical)
             .foregroundStyle(filled ? .white : color)
             .frame(width: size, height: size)
@@ -163,11 +171,25 @@ enum SymbolLibrary {
 struct SymbolGridPicker: View {
     @Binding var selection: String
     var color: Color
+    @State private var emoji = ""
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 6)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Emoji").font(.caption).foregroundStyle(.secondary)
+                TextField("输入一个表情，如 🍜", text: $emoji)
+                    .onChange(of: emoji) { _, value in
+                        if let first = value.last, !first.isASCII {
+                            selection = String(first)
+                            Haptics.tap()
+                        }
+                    }
+                if SymbolGlyph.isEmoji(selection) {
+                    CategoryIcon(symbol: selection, color: color, size: 34, filled: true)
+                }
+            }
             ForEach(SymbolLibrary.groups, id: \.0) { group in
                 Text(group.0).font(.caption).foregroundStyle(.secondary)
                 LazyVGrid(columns: columns, spacing: 10) {

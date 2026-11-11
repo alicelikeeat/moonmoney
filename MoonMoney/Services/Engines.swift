@@ -80,6 +80,35 @@ final class Router {
     static let shared = Router()
     var tab: AppTab = .home
     var entry: EntryRequest?
+    var showAIEntry = false
+    /// Record opened from Spotlight.
+    var detail: Record?
+
+    func handle(_ action: PendingAction) {
+        switch action {
+        case .newRecord: newRecord()
+        case .aiEntry: showAIEntry = true
+        }
+    }
+
+    /// moonmoney://add?kind=income, moonmoney://ai, moonmoney://stats
+    func handle(url: URL) {
+        guard url.scheme == "moonmoney" else { return }
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        switch url.host {
+        case "add":
+            let kind: RecordKind = switch items.first(where: { $0.name == "kind" })?.value {
+            case "income": .income
+            case "transfer": .transfer
+            default: .expense
+            }
+            newRecord(kind: kind)
+        case "ai": showAIEntry = true
+        case "stats": tab = .stats
+        case "assets": tab = .assets
+        default: tab = .home
+        }
+    }
 
     func newRecord(kind: RecordKind = .expense, date: Date? = nil, account: Account? = nil) {
         entry = EntryRequest(record: nil, kind: kind, date: date, account: account)

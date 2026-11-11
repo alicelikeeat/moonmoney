@@ -50,6 +50,20 @@ struct RecordDetailView: View {
                 if !record.sortedTags.isEmpty {
                     LabeledContent("标签", value: record.sortedTags.map { "#\($0.name)" }.joined(separator: " "))
                 }
+                if !record.member.isEmpty {
+                    LabeledContent("成员", value: record.member)
+                }
+                if record.installmentCount > 1 {
+                    LabeledContent("分期", value: "第 \(record.installmentIndex) / \(record.installmentCount) 期")
+                }
+                if record.kind == .expense {
+                    Picker("报销", selection: Binding(
+                        get: { record.reimbursement },
+                        set: { record.reimbursement = $0; try? context.save() }
+                    )) {
+                        ForEach(ReimbursementState.allCases) { Text($0.title).tag($0) }
+                    }
+                }
                 Toggle("计入统计与预算", isOn: Binding(
                     get: { !record.excludedFromStats },
                     set: { record.excludedFromStats = !$0; try? context.save() }
@@ -96,8 +110,10 @@ struct RecordDetailView: View {
                 // Delete after the pop animation so the view never reads a deleted model.
                 Task {
                     try? await Task.sleep(for: .milliseconds(450))
+                    let id = target.uuid
                     context.delete(target)
                     try? context.save()
+                    AppServices.recordDeleted(id)
                 }
             }
         }

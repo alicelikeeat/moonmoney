@@ -7,6 +7,7 @@ struct StatsView: View {
     @State private var periodKind: PeriodKind = .month
     @State private var anchor = Date.now
     @State private var kind: RecordKind = .expense
+    @State private var member = ""
 
     var body: some View {
         let interval = Periods.interval(periodKind, containing: anchor)
@@ -17,15 +18,31 @@ struct StatsView: View {
                 previous: previous,
                 periodKind: periodKind,
                 kind: kind,
-                ledgerID: settings.currentLedgerID
+                ledgerID: settings.currentLedgerID,
+                member: member
             )
-            .id("\(interval.start.timeIntervalSince1970)-\(periodKind.rawValue)-\(settings.currentLedgerID?.uuidString ?? "")")
+            .id("\(interval.start.timeIntervalSince1970)-\(periodKind.rawValue)-\(settings.currentLedgerID?.uuidString ?? "")-\(member)")
             .safeAreaInset(edge: .top, spacing: 0) {
                 periodBar(interval)
             }
             .navigationTitle("统计")
             .navigationSubtitle(Periods.title(interval, kind: periodKind))
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        NavigationLink(value: "reports") {
+                            Label("月报 / 年度账单", systemImage: "doc.richtext")
+                        }
+                        if !settings.members.isEmpty {
+                            Picker("成员", selection: $member) {
+                                Text("全部成员").tag("")
+                                ForEach(settings.members, id: \.self) { Text($0).tag($0) }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: member.isEmpty ? "ellipsis" : "person.crop.circle.fill")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Picker("类型", selection: $kind) {
                         Text("支出").tag(RecordKind.expense)
@@ -40,6 +57,9 @@ struct StatsView: View {
             }
             .navigationDestination(for: Record.self) { record in
                 RecordDetailView(record: record)
+            }
+            .navigationDestination(for: String.self) { _ in
+                ReportsView()
             }
         }
     }
@@ -94,7 +114,10 @@ private struct StatsContent: View {
     @State private var selectedDate: Date?
     @State private var selectedAngle: Int?
 
-    init(interval: DateInterval, previous: DateInterval, periodKind: PeriodKind, kind: RecordKind, ledgerID: UUID?) {
+    let member: String
+
+    init(interval: DateInterval, previous: DateInterval, periodKind: PeriodKind, kind: RecordKind, ledgerID: UUID?, member: String) {
+        self.member = member
         self.interval = interval
         self.previous = previous
         self.periodKind = periodKind
@@ -109,8 +132,9 @@ private struct StatsContent: View {
     }
 
     var body: some View {
-        let current = records.filter { interval.contains($0.date) && $0.date < interval.end }
-        let prior = records.filter { $0.date >= previous.start && $0.date < previous.end }
+        let scoped = member.isEmpty ? records : records.filter { $0.member == member }
+        let current = scoped.filter { interval.contains($0.date) && $0.date < interval.end }
+        let prior = scoped.filter { $0.date >= previous.start && $0.date < previous.end }
         let summary = Stats.summary(current)
         let priorSummary = Stats.summary(prior)
         let slices = Stats.slices(current, kind: kind)
@@ -120,7 +144,7 @@ private struct StatsContent: View {
 
         ScrollView {
             VStack(spacing: 16) {
-                overview(summary: summary, total: total, priorTotal: priorTotal)
+                overview(summary: summary, total: total, priorTotal: priorTotal, count: slices.reduce(0) { $0 + $1.count })
                 trendCard(buckets)
                 if slices.isEmpty {
                     ContentUnavailableView("暂无\(kind.title)数据", systemImage: "chart.pie",
@@ -141,7 +165,7 @@ private struct StatsContent: View {
 
     // MARK: Overview
 
-    private func overview(summary: PeriodSummary, total: Int, priorTotal: Int) -> some View {
+    private func overview(summary: PeriodSummary, total: Int, priorTotal: Int, count: Int) -> some View {
         let change = Stats.percentChange(current: total, previous: priorTotal)
         let days = Periods.elapsedDays(in: interval)
         return VStack(alignment: .leading, spacing: 14) {
@@ -166,7 +190,7 @@ private struct StatsContent: View {
             }
             HStack(spacing: 0) {
                 stat("日均", Money.format(total / max(days, 1)))
-                stat("笔数", "\(Stats.counted(records.filter { interval.contains($0.date) && $0.date < interval.end }).filter { $0.kind == kind }.count)")
+                stat("笔数", "\(count)")
                 stat(kind == .expense ? "收入" : "支出", Money.format(kind == .expense ? summary.income : summary.expense))
                 stat("结余", Money.signed(summary.net))
             }
@@ -292,7 +316,7 @@ private struct StatsContent: View {
                         let frame = geo[anchor]
                         VStack(spacing: 4) {
                             if let selected {
-                                Image(systemName: selected.symbol)
+                                SymbolGlyph(selected.symbol)
                                     .font(.title2)
                                     .foregroundStyle(selected.color)
                                 Text(selected.name).font(.subheadline.weight(.semibold))

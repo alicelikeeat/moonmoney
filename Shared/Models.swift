@@ -282,6 +282,14 @@ final class Record {
     var isRecurringInstance: Bool = false
     var createdAt: Date = Date.now
     var updatedAt: Date = Date.now
+    /// Family member this record belongs to ("" = unassigned).
+    var member: String = ""
+    /// 0 = not reimbursable, 1 = waiting for reimbursement, 2 = reimbursed.
+    var reimbursementRaw: Int = 0
+    /// Installment plan this record belongs to, if any.
+    var installmentGroup: UUID?
+    var installmentIndex: Int = 0
+    var installmentCount: Int = 0
 
     @Attribute(.externalStorage)
     var photo: Data?
@@ -341,6 +349,11 @@ final class Record {
 
     var displayColor: Color {
         kind == .transfer ? .transfer : (category?.color ?? .gray)
+    }
+
+    var reimbursement: ReimbursementState {
+        get { ReimbursementState(rawValue: reimbursementRaw) ?? .notNeeded }
+        set { reimbursementRaw = newValue.rawValue }
     }
 
     var sortedTags: [RecordTag] {
@@ -422,9 +435,76 @@ final class RecurringRule {
     }
 }
 
+// MARK: - Reimbursement
+
+enum ReimbursementState: Int, CaseIterable, Identifiable {
+    case notNeeded = 0, pending = 1, done = 2
+    var id: Int { rawValue }
+    var title: String {
+        switch self {
+        case .notNeeded: "无需报销"
+        case .pending: "待报销"
+        case .done: "已报销"
+        }
+    }
+}
+
+// MARK: - Savings goal
+
+@Model
+final class SavingsGoal {
+    var uuid: UUID = UUID()
+    var name: String = ""
+    var symbol: String = "star.fill"
+    var colorHex: String = "#FF9F0A"
+    var targetCents: Int = 0
+    var savedCents: Int = 0
+    var deadline: Date?
+    /// When set, progress follows this account's balance instead of manual deposits.
+    var accountID: UUID?
+    var isArchived: Bool = false
+    var order: Int = 0
+    var createdAt: Date = Date.now
+
+    init(name: String, targetCents: Int) {
+        self.name = name
+        self.targetCents = targetCents
+    }
+
+    var color: Color { Color(hex: colorHex) }
+}
+
+// MARK: - Debt (lent / borrowed)
+
+@Model
+final class Debt {
+    var uuid: UUID = UUID()
+    /// 0 = I lent money (receivable), 1 = I borrowed money (payable).
+    var directionRaw: Int = 0
+    var person: String = ""
+    var amountCents: Int = 0
+    var repaidCents: Int = 0
+    var currencyCode: String = "CNY"
+    var date: Date = Date.now
+    var dueDate: Date?
+    var note: String = ""
+    var isSettled: Bool = false
+    var createdAt: Date = Date.now
+
+    init(lent: Bool, person: String, amountCents: Int) {
+        self.directionRaw = lent ? 0 : 1
+        self.person = person
+        self.amountCents = amountCents
+        self.currencyCode = AppSettings.shared.baseCurrency
+    }
+
+    var isLent: Bool { directionRaw == 0 }
+    var remainingCents: Int { max(0, amountCents - repaidCents) }
+}
+
 enum AppSchema {
     static let models: [any PersistentModel.Type] = [
         Ledger.self, Account.self, BillCategory.self, RecordTag.self,
-        Record.self, Budget.self, RecurringRule.self,
+        Record.self, Budget.self, RecurringRule.self, SavingsGoal.self, Debt.self,
     ]
 }

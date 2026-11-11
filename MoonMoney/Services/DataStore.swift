@@ -4,21 +4,7 @@ import SwiftData
 @MainActor
 enum DataStore {
     /// Shared container used by the app and by App Intents (Siri / Shortcuts).
-    static let container: ModelContainer = {
-        let schema = SwiftData.Schema(AppSchema.models)
-        // `.automatic` syncs through iCloud when the iCloud capability is on,
-        // and stays local-only otherwise.
-        let cloud = ModelConfiguration("MoonMoney", schema: schema, cloudKitDatabase: .automatic)
-        if let container = try? ModelContainer(for: schema, configurations: cloud) {
-            return container
-        }
-        let local = ModelConfiguration("MoonMoney", schema: schema, cloudKitDatabase: .none)
-        do {
-            return try ModelContainer(for: schema, configurations: local)
-        } catch {
-            fatalError("无法创建数据库：\(error)")
-        }
-    }()
+    static let container: ModelContainer = AppGroup.makeContainer(cloudSync: true)
 
     static var context: ModelContext { container.mainContext }
 
@@ -44,6 +30,7 @@ enum DataStore {
 
         RecurringEngine.run(in: context)
         try? context.save()
+        AppServices.afterLaunch(context: context)
     }
 
     // MARK: Lookups

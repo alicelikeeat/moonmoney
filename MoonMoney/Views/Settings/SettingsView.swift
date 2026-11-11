@@ -21,6 +21,54 @@ struct SettingsView: View {
                 profileCard
                     .plainListRow(top: 8, bottom: 8)
 
+                Section("智能") {
+                    Button {
+                        Router.shared.showAIEntry = true
+                    } label: {
+                        SettingsLabel("AI 一句话记账", symbol: "sparkles", color: .purple)
+                    }
+                    NavigationLink { AutoBookkeepingGuideView() } label: {
+                        SettingsLabel("自动记账（Apple Pay / 截图）", symbol: "bolt.fill", color: .orange)
+                    }
+                    NavigationLink { ReportsView() } label: {
+                        SettingsLabel("月报与年度账单", symbol: "doc.richtext.fill", color: .pink)
+                    }
+                    Toggle(isOn: $settings.aiEnabled) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            SettingsLabel("使用 Apple 智能", symbol: "apple.intelligence", color: .indigo)
+                            Text("状态：\(SmartParser.aiStatusText)").font(.caption2).foregroundStyle(.secondary)
+                                .padding(.leading, 40)
+                        }
+                    }
+                }
+
+                Section("理财") {
+                    NavigationLink { SavingsGoalsView() } label: {
+                        SettingsLabel("存钱目标", symbol: "star.circle.fill", color: .orange)
+                    }
+                    NavigationLink { DebtsView() } label: {
+                        SettingsLabel("借贷", symbol: "person.2.fill", color: .teal)
+                    }
+                    NavigationLink { ReimbursementsView() } label: {
+                        SettingsLabel("报销", symbol: "doc.text.fill", color: .cyan)
+                    }
+                }
+
+                Section("个性化") {
+                    NavigationLink { BackgroundSettingsView() } label: {
+                        SettingsLabel("自定义背景（图片 / GIF / 视频）", symbol: "photo.fill", color: .pink)
+                    }
+                    NavigationLink { AppIconPickerView() } label: {
+                        SettingsLabel("App 图标", symbol: "app.badge.fill", color: .blue)
+                    }
+                    NavigationLink { MembersView() } label: {
+                        SettingsLabel("家庭成员", symbol: "person.3.fill", color: .green)
+                    }
+                    NavigationLink { ReminderSettingsView() } label: {
+                        SettingsLabel("提醒", symbol: "bell.badge.fill", color: .red)
+                    }
+                }
+
                 Section("记账") {
                     NavigationLink { BudgetView() } label: {
                         SettingsLabel("预算", symbol: "target", color: .green)
@@ -136,6 +184,8 @@ struct SettingsView: View {
                 case .success(let url):
                     do {
                         let outcome = try CSVService.importCSV(from: url, into: context)
+                        Spotlight.reindexAll(context: context)
+                        WidgetSync.reload()
                         message = "已导入 \(outcome.imported) 笔" + (outcome.skipped > 0 ? "，跳过 \(outcome.skipped) 行" : "")
                     } catch {
                         message = "导入失败：请确认文件包含「日期」和「金额」列。"

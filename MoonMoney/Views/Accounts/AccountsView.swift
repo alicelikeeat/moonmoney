@@ -19,6 +19,11 @@ struct AccountsView: View {
                 NetWorthCard(assets: totals.assets, liabilities: totals.liabilities)
                     .plainListRow(top: 8, bottom: 8)
 
+                if accounts.contains(where: { !($0.records ?? []).isEmpty }) {
+                    NetWorthTrend(accounts: accounts.filter { !$0.isArchived && $0.includeInNetWorth })
+                        .plainListRow(top: 0, bottom: 8)
+                }
+
                 ForEach(AccountType.allCases) { type in
                     let group = visible.filter { $0.type == type }
                     if !group.isEmpty {
@@ -374,8 +379,65 @@ struct AccountDetailView: View {
     }
 }
 
-private struct BalancePoint: Identifiable {
+struct BalancePoint: Identifiable {
     var id: Date { date }
     let date: Date
     let value: Double
+}
+
+/// Net worth at each of the last 12 month-ends.
+struct NetWorthTrend: View {
+    let accounts: [Account]
+
+    var body: some View {
+        let cal = Calendar.current
+        let thisMonth = cal.dateInterval(of: .month, for: .now)?.start ?? .now
+        let points: [BalancePoint] = (0..<12).reversed().compactMap { offset in
+            guard let month = cal.date(byAdding: .month, value: -offset, to: thisMonth),
+                  let end = cal.date(byAdding: .month, value: 1, to: month) else { return nil }
+            let cutoff = min(end.addingTimeInterval(-1), .now)
+            let total = accounts.reduce(0) {
+                $0 + AppSettings.shared.convertToBase($1.balanceCents(asOf: cutoff), from: $1.currencyCode)
+            }
+            return BalancePoint(date: month, value: Double(total) / 100)
+        }
+        let first = points.first?.value ?? 0
+        let last = points.last?.value ?? 0
+
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("净资产走势").font(.subheadline.weight(.semibold))
+                Spacer()
+                Text("近 12 个月 \(last >= first ? "+" : "")\(Money.format(Money.cents(last - first)))")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(last >= first ? Color.income : Color.expense)
+            }
+            Chart(points) { point in
+                AreaMark(x: .value("月份", point.date, unit: .month), y: .value("净资产", point.value))
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(LinearGradient(colors: [Color.teal.opacity(0.35), .clear], startPoint: .top, endPoint: .bottom))
+                LineMark(x: .value("月份", point.date, unit: .month), y: .value("净资产", point.value))
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(Color.teal)
+                    .lineStyle(StrokeStyle(lineWidth: 2.5))
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let amount = value.as(Double.self) { Text(Money.compact(Int(amount * 100))) }
+                    }
+                }
+            }
+            .chartXAxis {
+                AxisMarks(values: points.map(\.date)) { value in
+                    AxisValueLabel {
+                        if let date = value.as(Date.self) { Text(date.zh("M")) }
+                    }
+                }
+            }
+            .frame(height: 140)
+        }
+        .glassCard(cornerRadius: 26)
+    }
 }

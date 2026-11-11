@@ -169,10 +169,12 @@ struct MonthRecordsList: View {
     }
 
     private func delete(_ record: Record) {
+        let id = record.uuid
         withAnimation {
             context.delete(record)
             try? context.save()
         }
+        AppServices.recordDeleted(id)
         Haptics.warning()
     }
 
@@ -184,8 +186,10 @@ struct MonthRecordsList: View {
         copy.toAmountCents = record.toAmountCents
         copy.currencyCode = record.currencyCode
         copy.tags = record.tags
+        copy.member = record.member
         context.insert(copy)
         try? context.save()
+        AppServices.recordsChanged([copy], context: context)
         Haptics.success()
     }
 }

@@ -1,5 +1,8 @@
+import CoreSpotlight
 import SwiftData
 import SwiftUI
+import UserNotifications
+import WidgetKit
 
 @main
 struct MoonMoneyApp: App {
@@ -9,6 +12,7 @@ struct MoonMoneyApp: App {
 
     init() {
         DataStore.bootstrap()
+        UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
     }
 
     var body: some Scene {
@@ -58,6 +62,26 @@ struct RootView: View {
             EntrySheet(request: request)
                 .navigationTransition(.zoom(sourceID: "entry", in: entryNamespace))
         }
+        .sheet(isPresented: $router.showAIEntry) {
+            AIEntrySheet()
+        }
+        .sheet(item: $router.detail) { record in
+            NavigationStack {
+                RecordDetailView(record: record)
+            }
+        }
+        .onOpenURL { url in
+            router.handle(url: url)
+        }
+        .onContinueUserActivity(CSSearchableItemActionType) { activity in
+            if let id = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
+               let record = Spotlight.record(for: id, in: context) {
+                router.detail = record
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .moonMoneyPendingAction)) { _ in
+            if let action = PendingActions.consume() { router.handle(action) }
+        }
         .overlay {
             if lock.isLocked {
                 LockScreen()
@@ -74,8 +98,12 @@ struct RootView: View {
             switch phase {
             case .background:
                 lock.lockIfNeeded()
+                BackgroundVideoPlayer.shared.setActive(false)
+                WidgetSync.reload()
             case .active:
-                RecurringEngine.run(in: context)
+                if RecurringEngine.run(in: context) > 0 { WidgetSync.reload() }
+                BackgroundVideoPlayer.shared.setActive(true)
+                if let action = PendingActions.consume() { router.handle(action) }
                 if lock.isLocked {
                     Task { await lock.unlock() }
                 }
@@ -114,6 +142,7 @@ private struct TodaySpendBar: View {
 
     var body: some View {
         let spent = Stats.summary(today).expense
+        HStack(spacing: 4) {
         Button {
             Haptics.tap()
             router.newRecord()
@@ -141,11 +170,26 @@ private struct TodaySpendBar: View {
                     .font(.subheadline.weight(.semibold))
                     .labelStyle(.titleAndIcon)
             }
-            .padding(.horizontal, 16)
+            .padding(.leading, 16)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("记一笔，今日支出 \(Money.format(spent))")
+
+        Button {
+            Haptics.tap()
+            router.showAIEntry = true
+        } label: {
+            Image(systemName: "sparkles")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.purple)
+                .frame(width: 36, height: 36)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, 10)
+        .accessibilityLabel("AI 记账")
+        }
     }
 }
 
@@ -174,5 +218,11 @@ struct LockScreen: View {
                 .controlSize(.large)
             }
         }
+    }
+}
+
+enum WidgetSync {
+    static func reload() {
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }

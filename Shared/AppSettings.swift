@@ -6,7 +6,7 @@ import Observation
 final class AppSettings {
     static let shared = AppSettings()
 
-    @ObservationIgnored private let defaults = UserDefaults.standard
+    @ObservationIgnored private let defaults = AppGroup.defaults
 
     var currentLedgerID: UUID? {
         didSet { defaults.set(currentLedgerID?.uuidString, forKey: Keys.ledger) }
@@ -55,6 +55,33 @@ final class AppSettings {
         didSet { defaults.set(hasSeeded, forKey: Keys.seeded) }
     }
 
+    /// Family members records can be attributed to ("我", "伴侣"…). Empty = feature hidden.
+    var members: [String] {
+        didSet { defaults.set(members, forKey: Keys.members) }
+    }
+
+    var dailyReminderEnabled: Bool {
+        didSet { defaults.set(dailyReminderEnabled, forKey: Keys.dailyReminder) }
+    }
+
+    /// Minutes after midnight for the daily reminder.
+    var dailyReminderMinutes: Int {
+        didSet { defaults.set(dailyReminderMinutes, forKey: Keys.dailyReminderTime) }
+    }
+
+    var budgetAlertsEnabled: Bool {
+        didSet { defaults.set(budgetAlertsEnabled, forKey: Keys.budgetAlerts) }
+    }
+
+    var creditDueAlertsEnabled: Bool {
+        didSet { defaults.set(creditDueAlertsEnabled, forKey: Keys.creditAlerts) }
+    }
+
+    /// Use Apple Intelligence when the device supports it.
+    var aiEnabled: Bool {
+        didSet { defaults.set(aiEnabled, forKey: Keys.ai) }
+    }
+
     private init() {
         currentLedgerID = defaults.string(forKey: Keys.ledger).flatMap(UUID.init(uuidString:))
         defaultAccountID = defaults.string(forKey: Keys.defaultAccount).flatMap(UUID.init(uuidString:))
@@ -72,6 +99,13 @@ final class AppSettings {
         hapticsEnabled = defaults.object(forKey: Keys.haptics) as? Bool ?? true
         continuousEntry = defaults.bool(forKey: Keys.continuous)
         hasSeeded = defaults.bool(forKey: Keys.seeded)
+        members = defaults.stringArray(forKey: Keys.members) ?? []
+        dailyReminderEnabled = defaults.bool(forKey: Keys.dailyReminder)
+        let minutes = defaults.object(forKey: Keys.dailyReminderTime) as? Int
+        dailyReminderMinutes = minutes ?? 21 * 60
+        budgetAlertsEnabled = defaults.object(forKey: Keys.budgetAlerts) as? Bool ?? true
+        creditDueAlertsEnabled = defaults.object(forKey: Keys.creditAlerts) as? Bool ?? true
+        aiEnabled = defaults.object(forKey: Keys.ai) as? Bool ?? true
     }
 
     /// Converts an amount in `code` into base currency cents.
@@ -105,6 +139,12 @@ final class AppSettings {
         static let haptics = "hapticsEnabled"
         static let continuous = "continuousEntry"
         static let seeded = "hasSeededDefaults"
+        static let members = "members"
+        static let dailyReminder = "dailyReminderEnabled"
+        static let dailyReminderTime = "dailyReminderMinutes"
+        static let budgetAlerts = "budgetAlertsEnabled"
+        static let creditAlerts = "creditDueAlertsEnabled"
+        static let ai = "aiEnabled"
     }
 }
 
