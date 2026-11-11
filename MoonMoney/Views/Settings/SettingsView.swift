@@ -8,10 +8,7 @@ struct SettingsView: View {
     @Query private var allRecords: [Record]
     @Query(sort: \Ledger.order) private var ledgers: [Ledger]
 
-    @State private var exportURL: URL?
-    @State private var importing = false
     @State private var message: String?
-    @State private var confirmSample = false
 
     var body: some View {
         @Bindable var settings = settings
@@ -152,20 +149,8 @@ struct SettingsView: View {
                         } label: {
                             SettingsLabel("数据存储", symbol: "internaldrive.fill", color: .gray)
                         }
-                        Button {
-                            export()
-                        } label: {
-                            SettingsLabel("导出 CSV", symbol: "square.and.arrow.up.fill", color: .gray)
-                        }
-                        Button {
-                            importing = true
-                        } label: {
-                            SettingsLabel("从 CSV 导入", symbol: "square.and.arrow.down.fill", color: .gray)
-                        }
-                        Button {
-                            confirmSample = true
-                        } label: {
-                            SettingsLabel("生成示例数据", symbol: "wand.and.stars", color: .purple)
+                        NavigationLink { DataManagementView() } label: {
+                            SettingsLabel("数据管理（备份 / 恢复 / 清空）", symbol: "tray.full.fill", color: .red)
                         }
                     } header: {
                         Text("数据")
@@ -185,35 +170,10 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .background { AmbientBackground(tint: .indigo) }
             .navigationTitle("我的")
-            .sheet(item: $exportURL) { url in
-                ExportSheet(url: url)
-                    .presentationDetents([.medium])
-            }
-            .fileImporter(isPresented: $importing, allowedContentTypes: [.commaSeparatedText, .plainText]) { result in
-                switch result {
-                case .success(let url):
-                    do {
-                        let outcome = try CSVService.importCSV(from: url, into: context)
-                        Spotlight.reindexAll(context: context)
-                        WidgetSync.reload()
-                        message = "已导入 \(outcome.imported) 笔" + (outcome.skipped > 0 ? "，跳过 \(outcome.skipped) 行" : "")
-                    } catch {
-                        message = "导入失败：请确认文件包含「日期」和「金额」列。"
-                    }
-                case .failure(let error):
-                    message = error.localizedDescription
-                }
-            }
             .alert("提示", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
                 Button("好") { message = nil }
             } message: {
                 Text(message ?? "")
-            }
-            .confirmationDialog("在当前账本生成约 3 个月的示例账单？", isPresented: $confirmSample, titleVisibility: .visible) {
-                Button("生成") {
-                    Seed.insertSampleRecords(into: context)
-                    Haptics.success()
-                }
             }
         }
     }
@@ -262,40 +222,10 @@ struct SettingsView: View {
         return "\(version) (\(build))"
     }
 
-    private func export() {
-        do {
-            exportURL = try CSVService.export(records: allRecords, ledgers: ledgers)
-        } catch {
-            message = "导出失败：\(error.localizedDescription)"
-        }
-    }
 }
 
 extension URL: @retroactive Identifiable {
     public var id: String { absoluteString }
-}
-
-private struct ExportSheet: View {
-    let url: URL
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "doc.text.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.tint)
-            Text(url.lastPathComponent).font(.headline)
-            Text("可用 Numbers、Excel 打开，也可以再次导入。")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            ShareLink(item: url) {
-                Label("分享 / 存储到文件", systemImage: "square.and.arrow.up")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
-        }
-        .padding(24)
-    }
 }
 
 struct SettingsLabel: View {
