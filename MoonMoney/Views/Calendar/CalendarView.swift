@@ -64,8 +64,8 @@ private struct CalendarContent: View {
         List {
             VStack(spacing: 12) {
                 HStack {
-                    Button { onShift(-1) } label: { Image(systemName: "chevron.left").frame(width: 20, height: 20) }
-                        .buttonStyle(.glass).buttonBorderShape(.circle)
+                    Button { onShift(-1) } label: { Image(systemName: "chevron.left") }
+                        .buttonStyle(.inCard(circle: true))
                     Spacer()
                     VStack(spacing: 2) {
                         Text("支出 \(Money.format(monthSummary.expense))")
@@ -75,8 +75,8 @@ private struct CalendarContent: View {
                             .foregroundStyle(Color.income)
                     }
                     Spacer()
-                    Button { onShift(1) } label: { Image(systemName: "chevron.right").frame(width: 20, height: 20) }
-                        .buttonStyle(.glass).buttonBorderShape(.circle)
+                    Button { onShift(1) } label: { Image(systemName: "chevron.right") }
+                        .buttonStyle(.inCard(circle: true))
                 }
 
                 weekdayHeader

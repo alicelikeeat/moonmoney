@@ -22,7 +22,9 @@ struct StatsView: View {
                 member: member
             )
             .id("\(interval.start.timeIntervalSince1970)-\(periodKind.rawValue)-\(settings.currentLedgerID?.uuidString ?? "")-\(member)")
-            .safeAreaInset(edge: .top, spacing: 0) {
+            // safeAreaBar extends the scroll edge effect under the bar, so the
+            // scrolling glass cards never stack visibly beneath these glass buttons.
+            .safeAreaBar(edge: .top, spacing: 0) {
                 periodBar(interval)
             }
             .navigationTitle("统计")
@@ -65,7 +67,7 @@ struct StatsView: View {
     }
 
     private func periodBar(_ interval: DateInterval) -> some View {
-        GlassEffectContainer(spacing: 10) {
+        GlassEffectContainer(spacing: 4) {
             HStack(spacing: 10) {
                 Button {
                     move(interval, -1)
@@ -185,7 +187,8 @@ private struct StatsContent: View {
                         .foregroundStyle(kind == .expense ? (up ? Color.expense : Color.income) : (up ? Color.income : Color.expense))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
-                        .glassEffect(.regular, in: .capsule)
+                        .background((kind == .expense ? (up ? Color.expense : Color.income) : (up ? Color.income : Color.expense)).opacity(0.14),
+                                    in: .capsule)
                 }
             }
             HStack(spacing: 0) {

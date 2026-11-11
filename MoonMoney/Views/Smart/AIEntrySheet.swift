@@ -60,7 +60,7 @@ struct AIEntrySheet: View {
                     Button("关闭", systemImage: "xmark", role: .close) { dismiss() }
                 }
             }
-            .safeAreaInset(edge: .bottom) {
+            .safeAreaBar(edge: .bottom) {
                 if drafts.contains(where: \.include) {
                     let selected = drafts.filter { $0.include && $0.cents > 0 }
                     Button {
@@ -107,29 +107,26 @@ struct AIEntrySheet: View {
                 .submitLabel(.go)
                 .onSubmit { Task { await parse() } }
 
-            GlassEffectContainer(spacing: 10) {
-                HStack(spacing: 10) {
-                    PhotosPicker(selection: $photoItem, matching: .images) {
-                        Label("识别截图", systemImage: "text.viewfinder")
-                            .padding(.horizontal, 4)
-                    }
-                    .buttonStyle(.glass)
-
-                    Spacer()
-
-                    Button {
-                        Task { await parse() }
-                    } label: {
-                        if isWorking {
-                            ProgressView().padding(.horizontal, 12)
-                        } else {
-                            Label("解析", systemImage: "sparkles").padding(.horizontal, 6)
-                        }
-                    }
-                    .buttonStyle(.glassProminent)
-                    .tint(.purple)
-                    .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty || isWorking)
+            HStack(spacing: 10) {
+                PhotosPicker(selection: $photoItem, matching: .images) {
+                    Label("识别截图", systemImage: "text.viewfinder")
                 }
+                .buttonStyle(.inCard())
+
+                Spacer()
+
+                Button {
+                    Task { await parse() }
+                } label: {
+                    if isWorking {
+                        ProgressView().tint(.white)
+                    } else {
+                        Label("解析", systemImage: "sparkles")
+                    }
+                }
+                .buttonStyle(.inCard(prominent: true))
+                .tint(.purple)
+                .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty || isWorking)
             }
         }
         .glassCard(cornerRadius: 28)
@@ -240,7 +237,7 @@ private struct DraftCard: View {
                     }
                 } label: {
                     GlassChip(title: account?.name ?? "默认账户", symbol: account?.symbol ?? "creditcard",
-                              tint: account?.color, isActive: account != nil)
+                              tint: account?.color, isActive: account != nil, glass: false)
                 }
 
                 Spacer()

@@ -16,7 +16,9 @@ struct KeypadView: View {
     @State private var tapCount = 0
 
     var body: some View {
-        GlassEffectContainer(spacing: 8) {
+        // Container spacing is below the 8pt key gap, so keys share one
+        // glass sampling pass without melting into each other.
+        GlassEffectContainer(spacing: 2) {
             Grid(horizontalSpacing: 8, verticalSpacing: 8) {
                 GridRow {
                     digit("7"); digit("8"); digit("9")

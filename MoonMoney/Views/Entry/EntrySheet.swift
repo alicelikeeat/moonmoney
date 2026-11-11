@@ -33,7 +33,6 @@ struct EntrySheet: View {
     @State private var installments = 1
     @State private var installmentFeeRate = 0.0
     @State private var categoryTouched = false
-    @State private var showAI = false
 
     @State private var showTags = false
     @State private var showCategoryManager = false
@@ -132,9 +131,6 @@ struct EntrySheet: View {
         .onChange(of: note) { _, text in
             suggestCategory(for: text)
         }
-        .sheet(isPresented: $showAI) {
-            AIEntrySheet()
-        }
         .onChange(of: photoItem) { _, item in
             guard let item else { return }
             Task {
@@ -181,7 +177,7 @@ struct EntrySheet: View {
             }
         } else {
             ToolbarItem(placement: .primaryAction) {
-                Button("AI 记账", systemImage: "sparkles") { showAI = true }
+                Button("AI 记账", systemImage: "sparkles") { switchToAI() }
             }
         }
     }
@@ -249,7 +245,7 @@ struct EntrySheet: View {
 
     private var chips: some View {
         ScrollView(.horizontal) {
-            GlassEffectContainer(spacing: 8) {
+            GlassEffectContainer(spacing: 2) {
                 HStack(spacing: 8) {
                     if kind != .transfer {
                         Menu {
@@ -360,6 +356,15 @@ struct EntrySheet: View {
             if toAccount == nil { toAccount = accounts.first { $0.uuid != account?.uuid } }
         } else if category == nil {
             category = kindCategories.first
+        }
+    }
+
+    /// Hands over to the AI sheet instead of stacking a second glass sheet on top.
+    private func switchToAI() {
+        dismiss()
+        Task {
+            try? await Task.sleep(for: .milliseconds(450))
+            Router.shared.showAIEntry = true
         }
     }
 
@@ -547,7 +552,7 @@ struct TransferPanel: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                GlassEffectContainer(spacing: 14) {
+                GlassEffectContainer(spacing: 4) {
                     VStack(spacing: 10) {
                         accountCard(title: "转出", selection: $from)
                         Button {

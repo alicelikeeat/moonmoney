@@ -193,19 +193,26 @@ private struct ReportContent: View {
 
                 aiCard(insights: insights, summary: summary)
 
-                ForEach(insights) { insight in
-                    HStack(alignment: .top, spacing: 14) {
-                        Image(systemName: insight.symbol)
-                            .font(.title2)
-                            .foregroundStyle(insight.tint)
-                            .frame(width: 32)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(insight.title).font(.headline)
-                            Text(insight.detail).font(.subheadline).foregroundStyle(.secondary)
+                // One glass surface for all insights instead of a stack of glass cards.
+                if !insights.isEmpty {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(insights.enumerated()), id: \.element.id) { index, insight in
+                            if index > 0 { Divider().padding(.leading, 46) }
+                            HStack(alignment: .top, spacing: 14) {
+                                Image(systemName: insight.symbol)
+                                    .font(.title2)
+                                    .foregroundStyle(insight.tint)
+                                    .frame(width: 32)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(insight.title).font(.headline)
+                                    Text(insight.detail).font(.subheadline).foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.vertical, 12)
                         }
-                        Spacer(minLength: 0)
                     }
-                    .glassCard(cornerRadius: 22, padding: 16)
+                    .glassCard(cornerRadius: 26, padding: 16)
                 }
 
                 if current.isEmpty {
@@ -245,7 +252,8 @@ private struct ReportContent: View {
                 } label: {
                     Label("生成点评", systemImage: "sparkles")
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(.inCard(prominent: true))
+                .tint(.purple)
             } else {
                 Text("AI 点评需要支持 Apple 智能的设备（\(SmartParser.aiStatusText)）。下面的洞察由本地规则生成。")
                     .font(.footnote)

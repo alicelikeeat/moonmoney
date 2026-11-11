@@ -242,27 +242,24 @@ struct MonthSummaryCard: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
-                GlassEffectContainer(spacing: 8) {
-                    HStack(spacing: 8) {
-                        Button {
-                            shift(-1)
-                        } label: {
-                            Image(systemName: "chevron.left").frame(width: 18, height: 18)
-                        }
-                        Button {
-                            withAnimation(.smooth) { anchor = .now }
-                        } label: {
-                            Text("本月").font(.footnote.weight(.semibold))
-                        }
-                        .disabled(interval.contains(.now))
-                        Button {
-                            shift(1)
-                        } label: {
-                            Image(systemName: "chevron.right").frame(width: 18, height: 18)
-                        }
+                HStack(spacing: 8) {
+                    Button {
+                        shift(-1)
+                    } label: {
+                        Image(systemName: "chevron.left")
                     }
-                    .buttonStyle(.glass)
-                    .controlSize(.small)
+                    .buttonStyle(.inCard(circle: true))
+                    Button("本月") {
+                        withAnimation(.smooth) { anchor = .now }
+                    }
+                    .buttonStyle(.inCard())
+                    .disabled(interval.contains(.now))
+                    Button {
+                        shift(1)
+                    } label: {
+                        Image(systemName: "chevron.right")
+                    }
+                    .buttonStyle(.inCard(circle: true))
                 }
             }
 
@@ -286,10 +283,8 @@ struct MonthSummaryCard: View {
             } else {
                 NavigationLink(value: HomeRoute.budget) {
                     Label("设置月度预算", systemImage: "target")
-                        .font(.footnote.weight(.medium))
                 }
-                .buttonStyle(.glass)
-                .controlSize(.small)
+                .buttonStyle(.inCard())
             }
         }
         .glassCard(cornerRadius: 32, padding: 20)

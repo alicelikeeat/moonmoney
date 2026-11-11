@@ -20,6 +20,52 @@ extension View {
     }
 }
 
+// MARK: - Controls that sit inside a glass card
+
+/// Liquid Glass should never be stacked on Liquid Glass. Buttons placed inside a
+/// `glassCard` use this flat, vibrant fill instead of `.glass`.
+struct InCardButtonStyle: ButtonStyle {
+    var prominent = false
+    var circle = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        InCardButtonBody(configuration: configuration, prominent: prominent, circle: circle)
+    }
+}
+
+private struct InCardButtonBody: View {
+    let configuration: ButtonStyleConfiguration
+    let prominent: Bool
+    let circle: Bool
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .padding(.horizontal, circle ? 0 : 14)
+            .frame(minWidth: 34, minHeight: 34)
+            .foregroundStyle(prominent ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+            .background {
+                if circle {
+                    Circle().fill(prominent ? AnyShapeStyle(.tint) : AnyShapeStyle(.fill.tertiary))
+                } else {
+                    Capsule().fill(prominent ? AnyShapeStyle(.tint) : AnyShapeStyle(.fill.tertiary))
+                }
+            }
+            .contentShape(circle ? AnyShape(Circle()) : AnyShape(Capsule()))
+            .scaleEffect(configuration.isPressed ? 0.95 : 1)
+            .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.4)
+            .animation(.snappy(duration: 0.18), value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == InCardButtonStyle {
+    /// Flat fill for controls inside a glass card.
+    static func inCard(prominent: Bool = false, circle: Bool = false) -> InCardButtonStyle {
+        InCardButtonStyle(prominent: prominent, circle: circle)
+    }
+}
+
 // MARK: - Page background
 
 extension View {
@@ -91,15 +137,22 @@ struct GlassChip: View {
     var symbol: String
     var tint: Color? = nil
     var isActive = false
+    /// Set false when the chip sits inside a glass card, to avoid glass-on-glass.
+    var glass = true
 
     var body: some View {
-        Label(title, systemImage: symbol)
+        let label = Label(title, systemImage: symbol)
             .font(.subheadline.weight(.medium))
             .lineLimit(1)
             .padding(.horizontal, 12)
             .frame(height: 34)
             .foregroundStyle(isActive ? AnyShapeStyle(tint ?? .accentColor) : AnyShapeStyle(.primary))
-            .glassEffect(.regular.tint(isActive ? (tint ?? .accentColor).opacity(0.18) : nil).interactive(), in: .capsule)
+        if glass {
+            label.glassEffect(.regular.tint(isActive ? (tint ?? .accentColor).opacity(0.18) : nil).interactive(), in: .capsule)
+        } else {
+            label.background(isActive ? AnyShapeStyle((tint ?? .accentColor).opacity(0.16)) : AnyShapeStyle(.fill.tertiary),
+                             in: .capsule)
+        }
     }
 }
 

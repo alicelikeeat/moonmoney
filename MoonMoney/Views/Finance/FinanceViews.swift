@@ -90,7 +90,7 @@ struct SavingsGoalsView: View {
                 Form {
                     CentsField(title: withdraw ? "取出金额" : "存入金额", cents: $depositCents)
                 }
-                .pageBackground()
+                .scrollContentBackground(.hidden)
                 .navigationTitle(goal.name)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -325,7 +325,7 @@ struct DebtsView: View {
                     CentsField(title: debt.isLent ? "本次收回" : "本次归还", cents: $repayCents, code: debt.currencyCode)
                     LabeledContent("剩余", value: Money.format(debt.remainingCents, code: debt.currencyCode))
                 }
-                .pageBackground()
+                .scrollContentBackground(.hidden)
                 .navigationTitle(debt.person)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {

@@ -134,10 +134,9 @@ private struct BudgetContent: View {
                 editingTotal = true
             } label: {
                 Label(limit > 0 ? "修改总预算" : "设置总预算", systemImage: "target")
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
+            .buttonStyle(.inCard(prominent: true))
         }
         .glassCard(cornerRadius: 32, padding: 20)
     }
@@ -219,7 +218,7 @@ private struct CategoryBudgetEditor: View {
                 }
                 CentsField(title: "每月预算", cents: $cents)
             }
-            .pageBackground()
+            .scrollContentBackground(.hidden)
             .navigationTitle(budget == nil ? "添加分类预算" : "编辑分类预算")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
