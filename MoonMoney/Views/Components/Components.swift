@@ -20,6 +20,18 @@ extension View {
     }
 }
 
+// MARK: - Page background
+
+extension View {
+    /// Applies the user's page background (custom image / GIF / video, or the default mesh)
+    /// behind a List, Form or ScrollView.
+    func pageBackground(tint: Color = .accentColor) -> some View {
+        self
+            .scrollContentBackground(.hidden)
+            .background { AmbientBackground(tint: tint) }
+    }
+}
+
 // MARK: - Ambient background
 
 /// Soft mesh gradient that gives Liquid Glass something colorful to refract.

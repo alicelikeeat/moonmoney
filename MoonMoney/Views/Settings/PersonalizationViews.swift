@@ -67,7 +67,7 @@ struct BackgroundSettingsView: View {
                 }
             }
         }
-        .scrollContentBackground(.hidden)
+        .pageBackground()
         .navigationTitle("自定义背景")
         .onChange(of: photoItem) { _, item in
             guard let item else { return }
@@ -209,6 +209,7 @@ struct MembersView: View {
                 Text("添加成员后，记账面板会出现「成员」选项，统计页可以按成员筛选，适合家庭共用一个账本。")
             }
         }
+        .pageBackground()
         .navigationTitle("家庭成员")
         .toolbar { EditButton() }
     }
@@ -251,6 +252,7 @@ struct ReminderSettingsView: View {
                 Text(denied ? "通知权限已关闭，请到「设置 > 通知 > MoonMoney」开启。" : "提醒全部在本机生成，不会上传任何数据。")
             }
         }
+        .pageBackground()
         .navigationTitle("提醒")
         .task {
             denied = !(await Notifications.requestAuthorization())
@@ -311,6 +313,7 @@ struct AutoBookkeepingGuideView: View {
                 }
             }
         }
+        .pageBackground()
         .navigationTitle("自动记账")
     }
 

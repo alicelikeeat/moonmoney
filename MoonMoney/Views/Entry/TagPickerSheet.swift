@@ -43,6 +43,7 @@ struct TagPickerSheet: View {
                     }
                 }
             }
+            .pageBackground()
             .navigationTitle("标签")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

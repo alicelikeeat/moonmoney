@@ -219,6 +219,7 @@ private struct CategoryBudgetEditor: View {
                 }
                 CentsField(title: "每月预算", cents: $cents)
             }
+            .pageBackground()
             .navigationTitle(budget == nil ? "添加分类预算" : "编辑分类预算")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

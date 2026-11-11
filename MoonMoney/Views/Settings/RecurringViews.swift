@@ -187,6 +187,7 @@ struct RecurringEditor: View {
                     Text("到期后打开 App 时自动生成账单；若首次日期在过去，会补齐之前的每一期。")
                 }
             }
+            .pageBackground()
             .navigationTitle(rule == nil ? "新建周期记账" : "编辑周期记账")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

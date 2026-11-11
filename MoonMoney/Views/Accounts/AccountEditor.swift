@@ -102,6 +102,7 @@ struct AccountEditor: View {
                     }
                 }
             }
+            .pageBackground()
             .navigationTitle(account == nil ? "新建账户" : "编辑账户")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -54,6 +54,7 @@ struct LedgerManagerView: View {
                 Text("每个账本的账单、预算相互独立；账户与分类在所有账本间共享。")
             }
         }
+        .pageBackground()
         .navigationTitle("账本")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { EditButton() }
@@ -119,6 +120,7 @@ struct LedgerEditor: View {
                     SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex)).padding(.vertical, 6)
                 }
             }
+            .pageBackground()
             .navigationTitle(ledger == nil ? "新建账本" : "编辑账本")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -181,6 +183,7 @@ struct CategoryManagerView: View {
                 }
             }
         }
+        .pageBackground()
         .navigationTitle("分类")
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -269,6 +272,7 @@ struct CategoryEditor: View {
                     }
                 }
             }
+            .pageBackground()
             .navigationTitle(category == nil ? "新建\(kind.title)分类" : "编辑分类")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -346,6 +350,7 @@ struct TagManagerView: View {
                 Text("标签可跨分类标记账单，例如「报销」「旅行」，并可在搜索中筛选。")
             }
         }
+        .pageBackground()
         .navigationTitle("标签")
         .alert("重命名标签", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("名称", text: $renameText)
@@ -398,6 +403,7 @@ struct ExchangeRatesView: View {
                 Text("外币账户的账单会按此汇率折算为本位币参与统计和预算。")
             }
         }
+        .pageBackground()
         .navigationTitle("汇率")
     }
 }

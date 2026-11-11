@@ -90,6 +90,7 @@ struct SavingsGoalsView: View {
                 Form {
                     CentsField(title: withdraw ? "取出金额" : "存入金额", cents: $depositCents)
                 }
+                .pageBackground()
                 .navigationTitle(goal.name)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -205,6 +206,7 @@ private struct GoalEditor: View {
                 Section("颜色") { ColorSwatchPicker(hex: $colorHex) }
                 Section("图标") { SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex)).padding(.vertical, 6) }
             }
+            .pageBackground()
             .navigationTitle(goal == nil ? "新建目标" : "编辑目标")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -323,6 +325,7 @@ struct DebtsView: View {
                     CentsField(title: debt.isLent ? "本次收回" : "本次归还", cents: $repayCents, code: debt.currencyCode)
                     LabeledContent("剩余", value: Money.format(debt.remainingCents, code: debt.currencyCode))
                 }
+                .pageBackground()
                 .navigationTitle(debt.person)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -437,6 +440,7 @@ private struct DebtEditor: View {
                     if debt != nil { Toggle("已结清", isOn: $settled) }
                 }
             }
+            .pageBackground()
             .navigationTitle(debt == nil ? "新建借贷" : "编辑借贷")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
