@@ -1,0 +1,263 @@
+import SwiftData
+import SwiftUI
+import UniformTypeIdentifiers
+
+struct SettingsView: View {
+    @Environment(\.modelContext) private var context
+    @Environment(AppSettings.self) private var settings
+    @Query private var allRecords: [Record]
+    @Query(sort: \Ledger.order) private var ledgers: [Ledger]
+
+    @State private var exportURL: URL?
+    @State private var importing = false
+    @State private var message: String?
+    @State private var confirmSample = false
+
+    var body: some View {
+        @Bindable var settings = settings
+
+        NavigationStack {
+            List {
+                profileCard
+                    .plainListRow(top: 8, bottom: 8)
+
+                Section("记账") {
+                    NavigationLink { BudgetView() } label: {
+                        SettingsLabel("预算", symbol: "target", color: .green)
+                    }
+                    NavigationLink { RecurringListView() } label: {
+                        SettingsLabel("周期记账", symbol: "repeat", color: .purple)
+                    }
+                    NavigationLink { CategoryManagerView(initialKind: .expense) } label: {
+                        SettingsLabel("分类管理", symbol: "square.grid.2x2.fill", color: .orange)
+                    }
+                    NavigationLink { TagManagerView() } label: {
+                        SettingsLabel("标签管理", symbol: "number", color: .cyan)
+                    }
+                    NavigationLink { LedgerManagerView() } label: {
+                        SettingsLabel("账本管理", symbol: "books.vertical.fill", color: .indigo)
+                    }
+                }
+
+                Section("偏好") {
+                    Picker(selection: $settings.baseCurrency) {
+                        ForEach(Currencies.common, id: \.self) { code in
+                            Text("\(code) · \(Currencies.name(code))").tag(code)
+                        }
+                    } label: {
+                        SettingsLabel("本位币", symbol: "yensign.circle.fill", color: .yellow)
+                    }
+                    NavigationLink { ExchangeRatesView() } label: {
+                        SettingsLabel("汇率", symbol: "arrow.left.arrow.right.circle.fill", color: .teal)
+                    }
+                    Picker(selection: $settings.monthStartDay) {
+                        ForEach(1...28, id: \.self) { day in
+                            Text("每月 \(day) 日").tag(day)
+                        }
+                    } label: {
+                        SettingsLabel("每月起始日", symbol: "calendar.badge.clock", color: .red)
+                    }
+                    Toggle(isOn: $settings.weekStartsOnMonday) {
+                        SettingsLabel("每周从周一开始", symbol: "calendar", color: .blue)
+                    }
+                    Toggle(isOn: $settings.continuousEntry) {
+                        SettingsLabel("连续记账", symbol: "square.stack.3d.up.fill", color: .mint)
+                    }
+                    Toggle(isOn: $settings.hapticsEnabled) {
+                        SettingsLabel("触感反馈", symbol: "iphone.radiowaves.left.and.right", color: .pink)
+                    }
+                }
+
+                Section {
+                    Toggle(isOn: Binding(
+                        get: { settings.lockEnabled },
+                        set: { newValue in
+                            if newValue {
+                                Task {
+                                    if await AppLock.verify() { settings.lockEnabled = true }
+                                }
+                            } else {
+                                settings.lockEnabled = false
+                            }
+                        }
+                    )) {
+                        SettingsLabel("面容 ID 锁", symbol: "faceid", color: .green)
+                    }
+                } header: {
+                    Text("隐私")
+                } footer: {
+                    Text("开启后，每次回到 App 都需要验证身份，并在多任务界面隐藏金额。")
+                }
+
+                Section {
+                    LabeledContent {
+                        Text(iCloudAvailable ? "已登录" : "未登录")
+                            .foregroundStyle(iCloudAvailable ? Color.income : Color.secondary)
+                    } label: {
+                        SettingsLabel("iCloud 同步", symbol: "icloud.fill", color: .blue)
+                    }
+                    Button {
+                        export()
+                    } label: {
+                        SettingsLabel("导出 CSV", symbol: "square.and.arrow.up.fill", color: .gray)
+                    }
+                    Button {
+                        importing = true
+                    } label: {
+                        SettingsLabel("从 CSV 导入", symbol: "square.and.arrow.down.fill", color: .gray)
+                    }
+                    Button {
+                        confirmSample = true
+                    } label: {
+                        SettingsLabel("生成示例数据", symbol: "wand.and.stars", color: .purple)
+                    }
+                } header: {
+                    Text("数据")
+                } footer: {
+                    Text("在 Xcode 中为 App 开启 iCloud（CloudKit）能力后，数据会自动在你的设备间同步。")
+                }
+
+                Section {
+                    LabeledContent("版本", value: appVersion)
+                    Link(destination: URL(string: "https://support.apple.com/zh-cn/guide/shortcuts/welcome/ios")!) {
+                        SettingsLabel("Siri 与快捷指令：说“用 MoonMoney 记一笔”", symbol: "waveform", color: .indigo)
+                    }
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background { AmbientBackground(tint: .indigo) }
+            .navigationTitle("我的")
+            .sheet(item: $exportURL) { url in
+                ExportSheet(url: url)
+                    .presentationDetents([.medium])
+            }
+            .fileImporter(isPresented: $importing, allowedContentTypes: [.commaSeparatedText, .plainText]) { result in
+                switch result {
+                case .success(let url):
+                    do {
+                        let outcome = try CSVService.importCSV(from: url, into: context)
+                        message = "已导入 \(outcome.imported) 笔" + (outcome.skipped > 0 ? "，跳过 \(outcome.skipped) 行" : "")
+                    } catch {
+                        message = "导入失败：请确认文件包含「日期」和「金额」列。"
+                    }
+                case .failure(let error):
+                    message = error.localizedDescription
+                }
+            }
+            .alert("提示", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
+                Button("好") { message = nil }
+            } message: {
+                Text(message ?? "")
+            }
+            .confirmationDialog("在当前账本生成约 3 个月的示例账单？", isPresented: $confirmSample, titleVisibility: .visible) {
+                Button("生成") {
+                    Seed.insertSampleRecords(into: context)
+                    Haptics.success()
+                }
+            }
+        }
+    }
+
+    private var profileCard: some View {
+        let cal = Calendar.current
+        let days = Set(allRecords.map { cal.startOfDay(for: $0.date) }).count
+        let first = allRecords.map(\.date).min()
+        return HStack(spacing: 16) {
+            Image(systemName: "moon.stars.fill")
+                .font(.system(size: 30))
+                .foregroundStyle(.white)
+                .frame(width: 64, height: 64)
+                .background(LinearGradient(colors: [.indigo, .purple], startPoint: .topLeading, endPoint: .bottomTrailing),
+                            in: .rect(cornerRadius: 18))
+            VStack(alignment: .leading, spacing: 6) {
+                Text("MoonMoney").font(.title3.bold())
+                HStack(spacing: 14) {
+                    stat("\(days)", "记账天数")
+                    stat("\(allRecords.count)", "总笔数")
+                    stat("\(ledgers.count)", "账本")
+                }
+                if let first {
+                    Text("始于 \(first.zh("yMMMd"))").font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+        }
+        .glassCard(cornerRadius: 30)
+    }
+
+    private func stat(_ value: String, _ title: String) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(value).font(.headline.monospacedDigit())
+            Text(title).font(.caption2).foregroundStyle(.secondary)
+        }
+    }
+
+    private var iCloudAvailable: Bool {
+        FileManager.default.ubiquityIdentityToken != nil
+    }
+
+    private var appVersion: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        return "\(version) (\(build))"
+    }
+
+    private func export() {
+        do {
+            exportURL = try CSVService.export(records: allRecords, ledgers: ledgers)
+        } catch {
+            message = "导出失败：\(error.localizedDescription)"
+        }
+    }
+}
+
+extension URL: @retroactive Identifiable {
+    public var id: String { absoluteString }
+}
+
+private struct ExportSheet: View {
+    let url: URL
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "doc.text.fill")
+                .font(.system(size: 48))
+                .foregroundStyle(.tint)
+            Text(url.lastPathComponent).font(.headline)
+            Text("可用 Numbers、Excel 打开，也可以再次导入。")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            ShareLink(item: url) {
+                Label("分享 / 存储到文件", systemImage: "square.and.arrow.up")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.glassProminent)
+            .controlSize(.large)
+        }
+        .padding(24)
+    }
+}
+
+struct SettingsLabel: View {
+    let title: String
+    let symbol: String
+    let color: Color
+
+    init(_ title: String, symbol: String, color: Color) {
+        self.title = title
+        self.symbol = symbol
+        self.color = color
+    }
+
+    var body: some View {
+        Label {
+            Text(title).foregroundStyle(.primary)
+        } icon: {
+            Image(systemName: symbol)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(color.gradient, in: .rect(cornerRadius: 7))
+        }
+    }
+}
