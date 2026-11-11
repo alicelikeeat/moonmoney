@@ -102,6 +102,8 @@ final class Ledger {
     var colorHex: String = "#5E5CE6"
     var order: Int = 0
     var createdAt: Date = Date.now
+    /// Custom picture icon (small PNG). Overrides `symbol` when set.
+    @Attribute(.externalStorage) var iconImage: Data?
 
     init(name: String, symbol: String = "book.closed", colorHex: String = "#5E5CE6", order: Int = 0) {
         self.name = name
@@ -132,6 +134,8 @@ final class Account {
     var includeInNetWorth: Bool = true
     var isArchived: Bool = false
     var note: String = ""
+    /// Custom picture icon (small PNG). Overrides `symbol` when set.
+    @Attribute(.externalStorage) var iconImage: Data?
     var order: Int = 0
     var createdAt: Date = Date.now
 
@@ -219,6 +223,8 @@ final class BillCategory {
     var kindRaw: Int = 0
     var order: Int = 0
     var isArchived: Bool = false
+    /// Custom picture icon (small PNG). Overrides `symbol` when set.
+    @Attribute(.externalStorage) var iconImage: Data?
 
     @Relationship(deleteRule: .nullify, inverse: \Record.category)
     var records: [Record]? = []
@@ -345,6 +351,10 @@ final class Record {
 
     var displaySymbol: String {
         kind == .transfer ? "arrow.left.arrow.right" : (category?.symbol ?? "questionmark")
+    }
+
+    var displayImage: Data? {
+        kind == .transfer ? nil : category?.iconImage
     }
 
     var displayColor: Color {

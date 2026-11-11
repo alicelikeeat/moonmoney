@@ -173,7 +173,7 @@ private struct CategoryBudgetRow: View {
         let ratio = Double(used) / Double(max(budget, 1))
         let tint: Color = ratio >= 1 ? .expense : (ratio > 0.8 ? .orange : category.color)
         HStack(spacing: 12) {
-            CategoryIcon(symbol: category.symbol, color: category.color, size: 38)
+            CategoryIcon(symbol: category.symbol, color: category.color, size: 38, image: category.iconImage)
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text(category.name).font(.subheadline.weight(.medium))

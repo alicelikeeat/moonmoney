@@ -14,7 +14,7 @@ struct RecordDetailView: View {
         List {
             Group {
                 VStack(spacing: 12) {
-                    CategoryIcon(symbol: record.displaySymbol, color: record.displayColor, size: 64, filled: true)
+                    CategoryIcon(symbol: record.displaySymbol, color: record.displayColor, size: 64, filled: true, image: record.displayImage)
                     Text(record.displayTitle)
                         .font(.headline)
                     AmountText(cents: record.amountCents, kind: record.kind, code: record.currencyCode,

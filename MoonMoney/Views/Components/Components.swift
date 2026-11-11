@@ -1,4 +1,6 @@
+import PhotosUI
 import SwiftUI
+import UIKit
 
 // MARK: - Glass card
 
@@ -132,14 +134,58 @@ struct CategoryIcon: View {
     var color: Color
     var size: CGFloat = 38
     var filled = false
+    /// Custom picture icon; takes priority over `symbol`.
+    var image: Data? = nil
 
     var body: some View {
-        SymbolGlyph(symbol)
-            .font(.system(size: size * (SymbolGlyph.isEmoji(symbol) ? 0.52 : 0.44), weight: .semibold))
-            .symbolRenderingMode(.hierarchical)
-            .foregroundStyle(filled ? .white : color)
-            .frame(width: size, height: size)
-            .background(filled ? AnyShapeStyle(color.gradient) : AnyShapeStyle(color.opacity(0.16)), in: .circle)
+        if let image, let uiImage = IconImageCache.image(for: image) {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size, height: size)
+                .clipShape(.circle)
+                .overlay {
+                    Circle().strokeBorder(filled ? color : .white.opacity(0.25), lineWidth: filled ? 2.5 : 0.5)
+                }
+        } else {
+            SymbolGlyph(symbol)
+                .font(.system(size: size * (SymbolGlyph.isEmoji(symbol) ? 0.52 : 0.44), weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(filled ? .white : color)
+                .frame(width: size, height: size)
+                .background(filled ? AnyShapeStyle(color.gradient) : AnyShapeStyle(color.opacity(0.16)), in: .circle)
+        }
+    }
+}
+
+/// Decodes custom icon images once and keeps them in memory.
+enum IconImageCache {
+    private static let cache = NSCache<NSString, UIImage>()
+
+    static func image(for data: Data) -> UIImage? {
+        let key = "\(data.count)-\(data.prefix(256).hashValue)-\(data.suffix(256).hashValue)" as NSString
+        if let cached = cache.object(forKey: key) { return cached }
+        guard let image = UIImage(data: data) else { return nil }
+        cache.setObject(image, forKey: key)
+        return image
+    }
+
+    /// Center-crops to a square and shrinks to a small PNG (keeps sticker transparency).
+    static func makeIcon(from data: Data, side: CGFloat = 180) -> Data? {
+        guard let image = UIImage(data: data) else { return nil }
+        let size = image.size
+        let crop = min(size.width, size.height)
+        let origin = CGPoint(x: (size.width - crop) / 2, y: (size.height - crop) / 2)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: side, height: side), format: format)
+        let output = renderer.image { _ in
+            let scale = side / crop
+            image.draw(in: CGRect(x: -origin.x * scale, y: -origin.y * scale,
+                                  width: size.width * scale, height: size.height * scale))
+        }
+        return output.pngData()
     }
 }
 
@@ -248,18 +294,49 @@ enum SymbolLibrary {
 struct SymbolGridPicker: View {
     @Binding var selection: String
     var color: Color
+    /// When provided, the user can also pick a photo as the icon.
+    var image: Binding<Data?>? = nil
     @State private var emoji = ""
+    @State private var photoItem: PhotosPickerItem?
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 6)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
+            if let image {
+                HStack(spacing: 12) {
+                    CategoryIcon(symbol: selection, color: color, size: 44, filled: true, image: image.wrappedValue)
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        Label(image.wrappedValue == nil ? "用照片做图标" : "更换照片", systemImage: "photo")
+                    }
+                    .buttonStyle(.inCard())
+                    if image.wrappedValue != nil {
+                        Button("移除", role: .destructive) { image.wrappedValue = nil }
+                            .buttonStyle(.inCard())
+                    }
+                }
+                .onChange(of: photoItem) { _, item in
+                    guard let item else { return }
+                    Task {
+                        if let data = try? await item.loadTransferable(type: Data.self),
+                           let icon = IconImageCache.makeIcon(from: data) {
+                            image.wrappedValue = icon
+                            Haptics.success()
+                        }
+                        photoItem = nil
+                    }
+                }
+                Text("设置照片后会优先显示照片；选择下方符号或 Emoji 会替换照片。")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
             HStack {
                 Text("Emoji").font(.caption).foregroundStyle(.secondary)
                 TextField("输入一个表情，如 🍜", text: $emoji)
                     .onChange(of: emoji) { _, value in
                         if let first = value.last, !first.isASCII {
                             selection = String(first)
+                            image?.wrappedValue = nil
                             Haptics.tap()
                         }
                     }
@@ -273,6 +350,7 @@ struct SymbolGridPicker: View {
                     ForEach(group.1, id: \.self) { symbol in
                         Button {
                             selection = symbol
+                            image?.wrappedValue = nil
                             Haptics.tap()
                         } label: {
                             CategoryIcon(symbol: symbol, color: color, size: 42, filled: selection == symbol)

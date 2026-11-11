@@ -375,7 +375,7 @@ private struct StatsContent: View {
             ForEach(slices) { slice in
                 NavigationLink(value: slice) {
                     HStack(spacing: 12) {
-                        CategoryIcon(symbol: slice.symbol, color: slice.color, size: 36)
+                        CategoryIcon(symbol: slice.symbol, color: slice.color, size: 36, image: slice.image)
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
                                 Text(slice.name).font(.subheadline.weight(.medium))
@@ -465,7 +465,7 @@ struct CategoryRecordsView: View {
             Group {
                 Section {
                     HStack(spacing: 14) {
-                        CategoryIcon(symbol: slice.symbol, color: slice.color, size: 52, filled: true)
+                        CategoryIcon(symbol: slice.symbol, color: slice.color, size: 52, filled: true, image: slice.image)
                         VStack(alignment: .leading) {
                             Text(Money.format(total))
                                 .font(.title2.bold().monospacedDigit())

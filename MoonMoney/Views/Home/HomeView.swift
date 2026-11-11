@@ -367,7 +367,7 @@ struct RecordRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            CategoryIcon(symbol: record.displaySymbol, color: record.displayColor, size: 40)
+            CategoryIcon(symbol: record.displaySymbol, color: record.displayColor, size: 40, image: record.displayImage)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(record.displayTitle)

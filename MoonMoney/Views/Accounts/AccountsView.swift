@@ -187,7 +187,7 @@ struct AccountRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            CategoryIcon(symbol: account.symbol, color: account.color, size: 40, filled: true)
+            CategoryIcon(symbol: account.symbol, color: account.color, size: 40, filled: true, image: account.iconImage)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(account.name).font(.body.weight(.medium))
@@ -313,7 +313,7 @@ struct AccountDetailView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
-                CategoryIcon(symbol: account.symbol, color: account.color, size: 48, filled: true)
+                CategoryIcon(symbol: account.symbol, color: account.color, size: 48, filled: true, image: account.iconImage)
                 VStack(alignment: .leading) {
                     Text(account.type.title).font(.caption).foregroundStyle(.secondary)
                     Text(account.type == .credit ? "当前欠款" : "当前余额").font(.subheadline)

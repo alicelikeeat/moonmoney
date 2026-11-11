@@ -21,7 +21,7 @@ struct LedgerManagerView: View {
                             Haptics.tap()
                         } label: {
                             HStack(spacing: 12) {
-                                CategoryIcon(symbol: ledger.symbol, color: ledger.color, size: 40, filled: true)
+                                CategoryIcon(symbol: ledger.symbol, color: ledger.color, size: 40, filled: true, image: ledger.iconImage)
                                 Text(ledger.name).foregroundStyle(.primary)
                                 Spacer()
                                 if ledger.uuid == settings.currentLedgerID {
@@ -100,6 +100,7 @@ struct LedgerEditor: View {
     @Environment(\.modelContext) private var context
     @State private var name: String
     @State private var symbol: String
+    @State private var iconImage: Data?
     @State private var colorHex: String
 
     init(ledger: Ledger?, nextOrder: Int) {
@@ -107,6 +108,7 @@ struct LedgerEditor: View {
         self.nextOrder = nextOrder
         _name = State(initialValue: ledger?.name ?? "")
         _symbol = State(initialValue: ledger?.symbol ?? "book.closed.fill")
+        _iconImage = State(initialValue: ledger?.iconImage)
         _colorHex = State(initialValue: ledger?.colorHex ?? "#5E5CE6")
     }
 
@@ -115,13 +117,13 @@ struct LedgerEditor: View {
             Form {
                 Group {
                     HStack(spacing: 14) {
-                        CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true)
+                        CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true, image: iconImage)
                         TextField("账本名称，如「旅行」「装修」", text: $name)
                             .font(.title3.weight(.semibold))
                     }
                     Section("颜色") { ColorSwatchPicker(hex: $colorHex) }
                     Section("图标") {
-                        SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex)).padding(.vertical, 6)
+                        SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex), image: $iconImage).padding(.vertical, 6)
                     }
                 }
                 .listRowBackground(GlassRowBackground())
@@ -139,6 +141,7 @@ struct LedgerEditor: View {
                         if ledger == nil { context.insert(target) }
                         target.name = name.trimmingCharacters(in: .whitespaces)
                         target.symbol = symbol
+                        target.iconImage = iconImage
                         target.colorHex = colorHex
                         try? context.save()
                         dismiss()
@@ -221,7 +224,7 @@ struct CategoryManagerView: View {
             editing = category
         } label: {
             HStack(spacing: 12) {
-                CategoryIcon(symbol: category.symbol, color: category.color, size: 38)
+                CategoryIcon(symbol: category.symbol, color: category.color, size: 38, image: category.iconImage)
                 Text(category.name).foregroundStyle(.primary)
                 Spacer()
                 Text("\(category.records?.count ?? 0) 笔")
@@ -249,6 +252,7 @@ struct CategoryEditor: View {
     @Environment(\.modelContext) private var context
     @State private var name: String
     @State private var symbol: String
+    @State private var iconImage: Data?
     @State private var colorHex: String
     @State private var confirmDelete = false
 
@@ -258,6 +262,7 @@ struct CategoryEditor: View {
         self.nextOrder = nextOrder
         _name = State(initialValue: category?.name ?? "")
         _symbol = State(initialValue: category?.symbol ?? "tag.fill")
+        _iconImage = State(initialValue: category?.iconImage)
         _colorHex = State(initialValue: category?.colorHex ?? (Palette.swatches.randomElement() ?? "#FF9F0A"))
     }
 
@@ -266,13 +271,13 @@ struct CategoryEditor: View {
             Form {
                 Group {
                     HStack(spacing: 14) {
-                        CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true)
+                        CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true, image: iconImage)
                         TextField("分类名称", text: $name)
                             .font(.title3.weight(.semibold))
                     }
                     Section("颜色") { ColorSwatchPicker(hex: $colorHex) }
                     Section("图标") {
-                        SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex)).padding(.vertical, 6)
+                        SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex), image: $iconImage).padding(.vertical, 6)
                     }
                     if category != nil {
                         Section {
@@ -297,6 +302,7 @@ struct CategoryEditor: View {
                         if category == nil { context.insert(target) }
                         target.name = name.trimmingCharacters(in: .whitespaces)
                         target.symbol = symbol
+                        target.iconImage = iconImage
                         target.colorHex = colorHex
                         try? context.save()
                         dismiss()

@@ -497,8 +497,10 @@ struct CategoryGrid: View {
     let categories: [BillCategory]
     @Binding var selection: BillCategory?
     var onManage: () -> Void
+    @State private var editing: BillCategory?
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 5)
+    private var busyBackground: Bool { BackgroundStore.shared.isActive }
 
     var body: some View {
         ScrollView {
@@ -510,15 +512,15 @@ struct CategoryGrid: View {
                         Haptics.tap()
                     } label: {
                         VStack(spacing: 6) {
-                            CategoryIcon(symbol: category.symbol, color: category.color, size: 50, filled: isSelected)
+                            CategoryIcon(symbol: category.symbol, color: category.color, size: 50, filled: isSelected, image: category.iconImage)
                                 .scaleEffect(isSelected ? 1.08 : 1)
-                            Text(category.name)
-                                .font(.caption)
-                                .foregroundStyle(isSelected ? .primary : .secondary)
-                                .lineLimit(1)
+                            nameLabel(category.name, selected: isSelected)
                         }
                     }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        Button("编辑图标与名称", systemImage: "paintbrush.pointed") { editing = category }
+                    }
                 }
                 Button(action: onManage) {
                     VStack(spacing: 6) {
@@ -526,9 +528,7 @@ struct CategoryGrid: View {
                             .font(.system(size: 20, weight: .semibold))
                             .frame(width: 50, height: 50)
                             .glassEffect(.regular.interactive(), in: .circle)
-                        Text("管理")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        nameLabel("管理", selected: false)
                     }
                 }
                 .buttonStyle(.plain)
@@ -536,7 +536,27 @@ struct CategoryGrid: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 16)
         }
+        .sheet(item: $editing) { category in
+            CategoryEditor(category: category, kind: category.kind, nextOrder: categories.count)
+        }
         .scrollEdgeEffectStyle(.soft, for: .all)
+    }
+
+    /// Names stay legible on busy photo backgrounds via a small material pill.
+    @ViewBuilder
+    private func nameLabel(_ name: String, selected: Bool) -> some View {
+        let text = Text(name)
+            .font(.caption.weight(selected ? .semibold : .regular))
+            .foregroundStyle(selected || busyBackground ? .primary : .secondary)
+            .lineLimit(1)
+        if busyBackground {
+            text
+                .padding(.horizontal, 6)
+                .padding(.vertical, 1)
+                .background(.ultraThinMaterial, in: .capsule)
+        } else {
+            text
+        }
     }
 }
 
@@ -607,7 +627,8 @@ struct TransferPanel: View {
         } label: {
             HStack(spacing: 14) {
                 CategoryIcon(symbol: selection.wrappedValue?.symbol ?? "questionmark",
-                             color: selection.wrappedValue?.color ?? .gray, size: 44, filled: true)
+                             color: selection.wrappedValue?.color ?? .gray, size: 44, filled: true,
+                             image: selection.wrappedValue?.iconImage)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(.caption).foregroundStyle(.secondary)
                     Text(selection.wrappedValue?.name ?? "选择账户").font(.headline)

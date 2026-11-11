@@ -206,7 +206,7 @@ private struct DraftCard: View {
                         }
                     }
                 } label: {
-                    CategoryIcon(symbol: category?.symbol ?? "questionmark", color: category?.color ?? .gray, size: 44, filled: true)
+                    CategoryIcon(symbol: category?.symbol ?? "questionmark", color: category?.color ?? .gray, size: 44, filled: true, image: category?.iconImage)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(category?.name ?? "选择分类").font(.headline)

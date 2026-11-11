@@ -9,6 +9,7 @@ struct CategorySlice: Identifiable, Hashable {
     let cents: Int
     let count: Int
     var share: Double
+    var image: Data? = nil
 }
 
 struct TimeBucket: Identifiable, Hashable {
@@ -59,7 +60,8 @@ enum Stats {
                 color: value.0?.color ?? .gray,
                 cents: value.1,
                 count: value.2,
-                share: total > 0 ? Double(value.1) / Double(total) : 0
+                share: total > 0 ? Double(value.1) / Double(total) : 0,
+                image: value.0?.iconImage
             )
         }
         .sorted { $0.cents > $1.cents }

@@ -14,6 +14,7 @@ struct AccountEditor: View {
     @State private var name: String
     @State private var type: AccountType
     @State private var symbol: String
+    @State private var iconImage: Data?
     @State private var colorHex: String
     @State private var currency: String
     @State private var balanceCents: Int
@@ -31,6 +32,7 @@ struct AccountEditor: View {
         _name = State(initialValue: account?.name ?? "")
         _type = State(initialValue: account?.type ?? .debit)
         _symbol = State(initialValue: account?.symbol ?? AccountType.debit.defaultSymbol)
+        _iconImage = State(initialValue: account?.iconImage)
         _colorHex = State(initialValue: account?.colorHex ?? "#0A84FF")
         _currency = State(initialValue: account?.currencyCode ?? AppSettings.shared.baseCurrency)
         // Editing shows the current balance; saving back-solves the initial balance.
@@ -49,7 +51,7 @@ struct AccountEditor: View {
                 Group {
                     Section {
                         HStack(spacing: 14) {
-                            CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true)
+                            CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true, image: iconImage)
                             TextField("账户名称", text: $name)
                                 .font(.title3.weight(.semibold))
                         }
@@ -91,7 +93,7 @@ struct AccountEditor: View {
                     }
 
                     Section("图标") {
-                        SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex))
+                        SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex), image: $iconImage)
                             .padding(.vertical, 6)
                     }
 
@@ -146,6 +148,7 @@ struct AccountEditor: View {
         target.name = name.trimmingCharacters(in: .whitespaces)
         target.type = type
         target.symbol = symbol
+        target.iconImage = iconImage
         target.colorHex = colorHex
         target.currencyCode = currency
         target.creditLimitCents = creditLimitCents
