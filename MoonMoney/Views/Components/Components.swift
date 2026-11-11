@@ -1,6 +1,9 @@
+import AVFoundation
+import ImageIO
 import PhotosUI
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 // MARK: - Glass card
 
@@ -139,9 +142,13 @@ struct CategoryIcon: View {
 
     var body: some View {
         if let image, let uiImage = IconImageCache.image(for: image) {
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFill()
+            Group {
+                if uiImage.images != nil {
+                    AnimatedIconView(image: uiImage)
+                } else {
+                    Image(uiImage: uiImage).resizable().scaledToFill()
+                }
+            }
                 .frame(width: size, height: size)
                 .clipShape(.circle)
                 .overlay {
@@ -158,34 +165,139 @@ struct CategoryIcon: View {
     }
 }
 
-/// Decodes custom icon images once and keeps them in memory.
+/// Plays an animated icon (from a GIF or video) inside a SwiftUI frame.
+struct AnimatedIconView: UIViewRepresentable {
+    let image: UIImage
+
+    func makeUIView(context: Context) -> UIImageView {
+        let view = UIImageView(image: image)
+        view.contentMode = .scaleAspectFill
+        view.clipsToBounds = true
+        view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        view.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        view.startAnimating()
+        return view
+    }
+
+    func updateUIView(_ view: UIImageView, context: Context) {
+        if view.image !== image {
+            view.image = image
+        }
+        if !view.isAnimating { view.startAnimating() }
+    }
+}
+
+/// Decodes custom icons once and keeps them in memory. Icons are stored as a small
+/// PNG (photo) or a small looping GIF (from a GIF or a video clip).
 enum IconImageCache {
     private static let cache = NSCache<NSString, UIImage>()
+    static let side: CGFloat = 160
 
     static func image(for data: Data) -> UIImage? {
         let key = "\(data.count)-\(data.prefix(256).hashValue)-\(data.suffix(256).hashValue)" as NSString
         if let cached = cache.object(forKey: key) { return cached }
-        guard let image = UIImage(data: data) else { return nil }
-        cache.setObject(image, forKey: key)
-        return image
+        let decoded = decodeAnimated(data) ?? UIImage(data: data)
+        if let decoded { cache.setObject(decoded, forKey: key) }
+        return decoded
     }
 
-    /// Center-crops to a square and shrinks to a small PNG (keeps sticker transparency).
-    static func makeIcon(from data: Data, side: CGFloat = 180) -> Data? {
-        guard let image = UIImage(data: data) else { return nil }
+    /// Photo → square PNG. Animated GIF → square looping GIF.
+    static func makeIcon(from data: Data) -> Data? {
+        if let source = CGImageSourceCreateWithData(data as CFData, nil), CGImageSourceGetCount(source) > 1 {
+            return makeAnimatedIcon(from: source)
+        }
+        guard let image = UIImage(data: data), let cg = square(image) else { return nil }
+        return UIImage(cgImage: cg).pngData()
+    }
+
+    /// Video → the first 3 seconds as a square looping GIF at 10 fps.
+    static func makeIcon(fromVideo url: URL) async -> Data? {
+        let asset = AVURLAsset(url: url)
+        let seconds = (try? await asset.load(.duration)).map(CMTimeGetSeconds) ?? 0
+        let length = min(max(seconds, 0.1), 3)
+        let fps = 10.0
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: side * 2, height: side * 2)
+        generator.requestedTimeToleranceBefore = CMTime(seconds: 0.05, preferredTimescale: 600)
+        generator.requestedTimeToleranceAfter = CMTime(seconds: 0.05, preferredTimescale: 600)
+        var frames: [CGImage] = []
+        for index in 0..<max(1, Int(length * fps)) {
+            let time = CMTime(seconds: Double(index) / fps, preferredTimescale: 600)
+            if let frame = try? await generator.image(at: time).image,
+               let squared = square(UIImage(cgImage: frame)) {
+                frames.append(squared)
+            }
+        }
+        guard !frames.isEmpty else { return nil }
+        return encodeGIF(frames, delays: Array(repeating: 1 / fps, count: frames.count))
+    }
+
+    private static func makeAnimatedIcon(from source: CGImageSource) -> Data? {
+        let count = CGImageSourceGetCount(source)
+        let step = max(1, count / 60)
+        var frames: [CGImage] = []
+        var delays: [Double] = []
+        for index in stride(from: 0, to: count, by: step) {
+            guard let cg = CGImageSourceCreateImageAtIndex(source, index, nil),
+                  let squared = square(UIImage(cgImage: cg)) else { continue }
+            frames.append(squared)
+            delays.append(frameDelay(source, index: index) * Double(step))
+        }
+        return frames.isEmpty ? nil : encodeGIF(frames, delays: delays)
+    }
+
+    private static func decodeAnimated(_ data: Data) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        let count = CGImageSourceGetCount(source)
+        guard count > 1 else { return nil }
+        var frames: [UIImage] = []
+        var duration = 0.0
+        for index in 0..<count {
+            guard let cg = CGImageSourceCreateImageAtIndex(source, index, nil) else { continue }
+            frames.append(UIImage(cgImage: cg))
+            duration += frameDelay(source, index: index)
+        }
+        return frames.isEmpty ? nil : UIImage.animatedImage(with: frames, duration: max(duration, 0.1))
+    }
+
+    private static func frameDelay(_ source: CGImageSource, index: Int) -> Double {
+        guard let props = CGImageSourceCopyPropertiesAtIndex(source, index, nil) as? [CFString: Any],
+              let gif = props[kCGImagePropertyGIFDictionary] as? [CFString: Any] else { return 0.1 }
+        let unclamped = gif[kCGImagePropertyGIFUnclampedDelayTime] as? Double ?? 0
+        let delay = unclamped > 0 ? unclamped : (gif[kCGImagePropertyGIFDelayTime] as? Double ?? 0.1)
+        return delay < 0.02 ? 0.1 : delay
+    }
+
+    /// Center-crops to a square of `side` points at 1x.
+    private static func square(_ image: UIImage) -> CGImage? {
         let size = image.size
         let crop = min(size.width, size.height)
-        let origin = CGPoint(x: (size.width - crop) / 2, y: (size.height - crop) / 2)
+        guard crop > 0 else { return nil }
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         format.opaque = false
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: side, height: side), format: format)
         let output = renderer.image { _ in
             let scale = side / crop
-            image.draw(in: CGRect(x: -origin.x * scale, y: -origin.y * scale,
+            image.draw(in: CGRect(x: -(size.width - crop) / 2 * scale, y: -(size.height - crop) / 2 * scale,
                                   width: size.width * scale, height: size.height * scale))
         }
-        return output.pngData()
+        return output.cgImage
+    }
+
+    private static func encodeGIF(_ frames: [CGImage], delays: [Double]) -> Data? {
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data, UTType.gif.identifier as CFString, frames.count, nil) else {
+            return nil
+        }
+        let fileProps = [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]] as CFDictionary
+        CGImageDestinationSetProperties(destination, fileProps)
+        for (frame, delay) in zip(frames, delays) {
+            let frameProps = [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFDelayTime: delay]] as CFDictionary
+            CGImageDestinationAddImage(destination, frame, frameProps)
+        }
+        return CGImageDestinationFinalize(destination) ? data as Data : nil
     }
 }
 
@@ -306,8 +418,8 @@ struct SymbolGridPicker: View {
             if let image {
                 HStack(spacing: 12) {
                     CategoryIcon(symbol: selection, color: color, size: 44, filled: true, image: image.wrappedValue)
-                    PhotosPicker(selection: $photoItem, matching: .images) {
-                        Label(image.wrappedValue == nil ? "用照片做图标" : "更换照片", systemImage: "photo")
+                    PhotosPicker(selection: $photoItem, matching: .any(of: [.images, .videos])) {
+                        Label(image.wrappedValue == nil ? "照片 / GIF / 视频" : "更换", systemImage: "photo.on.rectangle")
                     }
                     .buttonStyle(.inCard())
                     if image.wrappedValue != nil {
@@ -318,15 +430,25 @@ struct SymbolGridPicker: View {
                 .onChange(of: photoItem) { _, item in
                     guard let item else { return }
                     Task {
-                        if let data = try? await item.loadTransferable(type: Data.self),
-                           let icon = IconImageCache.makeIcon(from: data) {
+                        var icon: Data?
+                        if item.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) {
+                            if let movie = try? await item.loadTransferable(type: PickedMovie.self) {
+                                icon = await IconImageCache.makeIcon(fromVideo: movie.url)
+                                try? FileManager.default.removeItem(at: movie.url)
+                            }
+                        } else if let data = try? await item.loadTransferable(type: Data.self) {
+                            icon = IconImageCache.makeIcon(from: data)
+                        }
+                        if let icon {
                             image.wrappedValue = icon
                             Haptics.success()
+                        } else {
+                            Haptics.warning()
                         }
                         photoItem = nil
                     }
                 }
-                Text("设置照片后会优先显示照片；选择下方符号或 Emoji 会替换照片。")
+                Text("支持照片、GIF 动图和视频（截取前 3 秒做成会动的图标）。选择下方符号或 Emoji 会替换它。")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
