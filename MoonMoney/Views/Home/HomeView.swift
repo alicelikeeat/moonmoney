@@ -307,7 +307,6 @@ struct MonthSummaryCard: View {
                     .lineLimit(1)
                     .layoutPriority(1)
                 Spacer(minLength: 4)
-                Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(.tertiary)
             }
             ProgressCapsule(value: ratio, tint: tint)
             HStack {
