@@ -28,6 +28,7 @@ struct StatsView: View {
                 periodBar(interval)
             }
             .navigationTitle("统计")
+            .navigationBarTitleDisplayMode(.inline)
             .navigationSubtitle(Periods.title(interval, kind: periodKind))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -293,7 +294,9 @@ private struct StatsContent: View {
     private func axisDates(_ buckets: [TimeBucket]) -> [Date] {
         switch periodKind {
         case .year, .week: buckets.map(\.date)
-        case .month: buckets.enumerated().filter { $0.offset % 7 == 0 }.map(\.element.date)
+        case .month: buckets.enumerated()
+            .filter { $0.offset % 7 == 0 && buckets.count - $0.offset > 4 }
+            .map(\.element.date)
         }
     }
 

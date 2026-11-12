@@ -32,11 +32,8 @@ struct SettingsView: View {
                             SettingsLabel("月报与年度账单", symbol: "doc.richtext.fill", color: .pink)
                         }
                         Toggle(isOn: $settings.aiEnabled) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                SettingsLabel("使用 Apple 智能", symbol: "apple.intelligence", color: .indigo)
-                                Text("状态：\(SmartParser.aiStatusText)").font(.caption2).foregroundStyle(.secondary)
-                                    .padding(.leading, 40)
-                            }
+                            SettingsLabel("使用 Apple 智能", symbol: "apple.intelligence", color: .indigo,
+                                          subtitle: "状态：\(SmartParser.aiStatusText)")
                         }
                     }
 
@@ -232,16 +229,23 @@ struct SettingsLabel: View {
     let title: String
     let symbol: String
     let color: Color
+    var subtitle: String? = nil
 
-    init(_ title: String, symbol: String, color: Color) {
+    init(_ title: String, symbol: String, color: Color, subtitle: String? = nil) {
         self.title = title
         self.symbol = symbol
         self.color = color
+        self.subtitle = subtitle
     }
 
     var body: some View {
         Label {
-            Text(title).foregroundStyle(.primary)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title).foregroundStyle(Color.primary)
+                if let subtitle {
+                    Text(subtitle).font(.caption2).foregroundStyle(Color.secondary)
+                }
+            }
         } icon: {
             Image(systemName: symbol)
                 .font(.system(size: 14, weight: .semibold))

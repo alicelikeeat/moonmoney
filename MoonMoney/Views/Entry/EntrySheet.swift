@@ -504,7 +504,7 @@ struct CategoryGrid: View {
 
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 14) {
+            LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(categories) { category in
                     let isSelected = selection?.uuid == category.uuid
                     Button {
@@ -512,7 +512,7 @@ struct CategoryGrid: View {
                         Haptics.tap()
                     } label: {
                         VStack(spacing: 6) {
-                            CategoryIcon(symbol: category.symbol, color: category.color, size: 50, filled: isSelected, image: category.iconImage)
+                            CategoryIcon(symbol: category.symbol, color: category.color, size: 46, filled: isSelected, image: category.iconImage)
                                 .scaleEffect(isSelected ? 1.08 : 1)
                             nameLabel(category.name, selected: isSelected)
                         }
@@ -526,7 +526,7 @@ struct CategoryGrid: View {
                     VStack(spacing: 6) {
                         Image(systemName: "slider.horizontal.3")
                             .font(.system(size: 20, weight: .semibold))
-                            .frame(width: 50, height: 50)
+                            .frame(width: 46, height: 46)
                             .glassEffect(.regular.interactive(), in: .circle)
                         nameLabel("管理", selected: false)
                     }
@@ -534,12 +534,13 @@ struct CategoryGrid: View {
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 20)
         }
+        .scrollEdgeEffectStyle(.soft, for: .top)
         .sheet(item: $editing) { category in
             CategoryEditor(category: category, kind: category.kind, nextOrder: categories.count)
         }
-        .scrollEdgeEffectStyle(.soft, for: .all)
     }
 
     /// Names stay legible on busy photo backgrounds via a small material pill.

@@ -299,20 +299,26 @@ struct MonthSummaryCard: View {
         let days = Periods.remainingDays(in: interval)
         let tint: Color = ratio >= 1 ? .expense : (ratio > 0.8 ? .orange : .income)
         return VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(alignment: .firstTextBaseline) {
                 Label(remaining >= 0 ? "预算剩余 \(Money.format(remaining))" : "已超支 \(Money.format(-remaining))",
                       systemImage: "target")
-                    .font(.footnote.weight(.medium))
+                    .font(.footnote.weight(.semibold).monospacedDigit())
                     .foregroundStyle(remaining >= 0 ? Color.primary : Color.expense)
-                Spacer()
-                if remaining > 0 && days > 0 {
-                    Text("每天可用 \(Money.format(remaining / days))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                    .lineLimit(1)
+                    .layoutPriority(1)
+                Spacer(minLength: 4)
                 Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(.tertiary)
             }
             ProgressCapsule(value: ratio, tint: tint)
+            HStack {
+                Text("已用 \(InsightEngine.percent(ratio))")
+                Spacer()
+                if remaining > 0 && days > 0 {
+                    Text("剩 \(days) 天 · 每天可用 \(Money.format(remaining / days))")
+                }
+            }
+            .font(.caption2.monospacedDigit())
+            .foregroundStyle(.secondary)
         }
     }
 

@@ -436,7 +436,7 @@ struct NetWorthTrend: View {
                 }
             }
             .chartXAxis {
-                AxisMarks(values: points.map(\.date)) { value in
+                AxisMarks(values: points.enumerated().filter { $0.offset % 3 == 2 }.map(\.element.date)) { value in
                     AxisValueLabel {
                         if let date = value.as(Date.self) { Text(date.zh("M")) }
                     }
