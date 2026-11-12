@@ -1,0 +1,78 @@
+name: Simulator screenshots
+
+# Builds for the iOS simulator, launches each main screen with demo data in
+# light and dark mode, and publishes the screenshots to a rolling release.
+
+on:
+  push:
+    branches: [main, "ccr-*"]
+    paths-ignore: ["**.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE" ]; then XCODE=$(ls -d /Applications/Xcode*.app | sort -V | tail -1); fi
+          sudo xcode-select -s "$XCODE"
+
+      - name: Build for simulator
+        run: |
+          set -o pipefail
+          xcodebuild -project MoonMoney.xcodeproj -scheme MoonMoney -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build 2>&1 \
+            | tee build.log | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
+          test -d build/Build/Products/Debug-iphonesimulator/MoonMoney.app
+
+      - name: Boot simulator
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          ios = sorted([k for k in devices if "iOS-26" in k], reverse=True)
+          pool = [d for k in ios for d in devices[k] if d["name"].startswith("iPhone")]
+          pro = [d for d in pool if "Pro" in d["name"] and "Max" not in d["name"]]
+          print((pro or pool)[0]["udid"])')
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
+          xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/MoonMoney.app
+
+      - name: Capture screens
+        run: |
+          mkdir -p shots
+          for mode in light dark; do
+            xcrun simctl ui "$UDID" appearance "$mode"
+            for screen in home stats assets me entry ai; do
+              xcrun simctl terminate "$UDID" com.moonmoney.app 2>/dev/null || true
+              xcrun simctl launch "$UDID" com.moonmoney.app -demoData -screen "$screen"
+              sleep 7
+              xcrun simctl io "$UDID" screenshot "shots/${mode}-${screen}.png"
+            done
+          done
+          ls -la shots
+
+      - name: Publish screenshots
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete screenshots --yes --cleanup-tag 2>/dev/null || true
+          gh release create screenshots shots/*.png \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "模拟器截图（自动生成）" \
+            --notes "commit ${GITHUB_SHA::7} 的模拟器截图，浅色与深色模式。"

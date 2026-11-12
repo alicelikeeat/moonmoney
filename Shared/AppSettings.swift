@@ -108,6 +108,25 @@ final class AppSettings {
         aiEnabled = defaults.object(forKey: Keys.ai) as? Bool ?? true
     }
 
+    /// Re-reads values another process (the app vs. the widget) may have changed.
+    func reload() {
+        let ledger = defaults.string(forKey: Keys.ledger).flatMap(UUID.init(uuidString:))
+        if ledger != currentLedgerID { currentLedgerID = ledger }
+        let account = defaults.string(forKey: Keys.defaultAccount).flatMap(UUID.init(uuidString:))
+        if account != defaultAccountID { defaultAccountID = account }
+        let currency = defaults.string(forKey: Keys.baseCurrency) ?? "CNY"
+        if currency != baseCurrency { baseCurrency = currency }
+        if let data = defaults.data(forKey: Keys.rates),
+           let decoded = try? JSONDecoder().decode([String: Double].self, from: data), decoded != rates {
+            rates = decoded
+        }
+        let start = defaults.integer(forKey: Keys.monthStart)
+        let startDay = (1...28).contains(start) ? start : 1
+        if startDay != monthStartDay { monthStartDay = startDay }
+        let monday = defaults.object(forKey: Keys.weekMonday) as? Bool ?? true
+        if monday != weekStartsOnMonday { weekStartsOnMonday = monday }
+    }
+
     /// Converts an amount in `code` into base currency cents.
     func convertToBase(_ cents: Int, from code: String) -> Int {
         guard code != baseCurrency else { return cents }

@@ -12,7 +12,7 @@ enum AppServices {
     static func afterLaunch(context: ModelContext) {
         Task {
             await Notifications.reschedule(context: context)
-            Spotlight.reindexAll(context: context)
+            Spotlight.reindexIfStale(context: context)
         }
     }
 
@@ -60,6 +60,15 @@ enum Spotlight {
 
     static func remove(_ id: UUID) {
         CSSearchableIndex.default().deleteSearchableItems(withIdentifiers: [id.uuidString])
+    }
+
+    /// Records are indexed as they change; a full rebuild weekly catches anything missed.
+    static func reindexIfStale(context: ModelContext) {
+        let key = "spotlightIndexedAt"
+        let last = AppGroup.defaults.object(forKey: key) as? Date ?? .distantPast
+        guard Date.now.timeIntervalSince(last) > 7 * 86_400 else { return }
+        AppGroup.defaults.set(Date.now, forKey: key)
+        reindexAll(context: context)
     }
 
     static func reindexAll(context: ModelContext) {

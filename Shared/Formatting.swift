@@ -120,8 +120,11 @@ extension Date {
 
 enum DateFormatterCache {
     nonisolated(unsafe) private static var cache: [String: DateFormatter] = [:]
+    private static let lock = NSLock()
 
     static func formatter(for template: String) -> DateFormatter {
+        lock.lock()
+        defer { lock.unlock() }
         if let cached = cache[template] { return cached }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "zh_CN")

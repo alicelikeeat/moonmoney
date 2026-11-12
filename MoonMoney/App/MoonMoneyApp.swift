@@ -12,6 +12,7 @@ struct MoonMoneyApp: App {
 
     init() {
         DataStore.bootstrap()
+        DemoMode.applyIfRequested()
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
     }
 
@@ -32,6 +33,9 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.modelContext) private var context
     @Namespace private var entryNamespace
+    /// Only auto-prompt Face ID after a real trip to the background; the
+    /// system prompt itself bounces the scene through inactive → active.
+    @State private var returnedFromBackground = false
 
     var body: some View {
         @Bindable var router = router
@@ -97,6 +101,7 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .background:
+                returnedFromBackground = true
                 lock.lockIfNeeded()
                 BackgroundVideoPlayer.shared.setActive(false)
                 WidgetSync.reload()
@@ -104,9 +109,10 @@ struct RootView: View {
                 if RecurringEngine.run(in: context) > 0 { WidgetSync.reload() }
                 BackgroundVideoPlayer.shared.setActive(true)
                 if let action = PendingActions.consume() { router.handle(action) }
-                if lock.isLocked {
+                if lock.isLocked && returnedFromBackground {
                     Task { await lock.unlock() }
                 }
+                returnedFromBackground = false
             default:
                 break
             }

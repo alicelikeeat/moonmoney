@@ -73,6 +73,7 @@ enum WidgetData {
     static func load() -> SummaryEntry {
         let context = ModelContext(container)
         let settings = AppSettings.shared
+        settings.reload()
         let ledgerID = settings.currentLedgerID
         let cal = Calendar.current
         let month = Periods.month(containing: .now)
