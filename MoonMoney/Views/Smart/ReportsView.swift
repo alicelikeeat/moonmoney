@@ -98,7 +98,7 @@ enum InsightEngine {
         return result
     }
 
-    static func percent(_ value: Double) -> String {
+    nonisolated static func percent(_ value: Double) -> String {
         value.formatted(.percent.precision(.fractionLength(0)))
     }
 }
