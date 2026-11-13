@@ -96,7 +96,7 @@ enum Notifications {
     static func requestAuthorization() async -> Bool {
         // Automated screenshot runs must not be covered by the system prompt.
         if ProcessInfo.processInfo.arguments.contains("-demoData") { return false }
-        (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+        return (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
     }
 
     /// Rebuilds the daily reminder and credit-card due reminders.
