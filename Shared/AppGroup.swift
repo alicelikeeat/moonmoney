@@ -2,6 +2,7 @@ import AppIntents
 import Foundation
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 /// Everything the app and its widget extension share: the App Group,
 /// shared UserDefaults, and the SwiftData store location.
@@ -224,4 +225,68 @@ struct SymbolGlyph: View {
             Image(systemName: symbol)
         }
     }
+}
+
+// MARK: - One-tap logging from widgets
+
+/// Logs a frequent expense without opening the app (interactive widget button).
+struct QuickLogIntent: AppIntent {
+    static let title: LocalizedStringResource = "一键记账"
+    static let description = IntentDescription("从小组件直接记录一笔常用支出。")
+    static let isDiscoverable = false
+
+    @Parameter(title: "金额（分）")
+    var amountCents: Int
+
+    @Parameter(title: "分类 ID")
+    var categoryID: String
+
+    @Parameter(title: "备注")
+    var note: String
+
+    init() {}
+
+    init(amountCents: Int, categoryID: UUID, note: String) {
+        self.amountCents = amountCents
+        self.categoryID = categoryID.uuidString
+        self.note = note
+    }
+
+    func perform() async throws -> some IntentResult {
+        guard amountCents > 0 else { return .result() }
+        let context = ModelContext(QuickLogStore.container)
+        let settings = AppSettings.shared
+        settings.reload()
+
+        let categoryUUID = UUID(uuidString: categoryID) ?? UUID()
+        var categoryFetch = FetchDescriptor<BillCategory>(predicate: #Predicate<BillCategory> { $0.uuid == categoryUUID })
+        categoryFetch.fetchLimit = 1
+        let category = try? context.fetch(categoryFetch).first
+
+        let accountUUID = settings.defaultAccountID ?? UUID()
+        var accountFetch = FetchDescriptor<Account>(predicate: #Predicate<Account> { $0.uuid == accountUUID })
+        accountFetch.fetchLimit = 1
+        var account = try? context.fetch(accountFetch).first
+        if account == nil {
+            var fallback = FetchDescriptor<Account>(predicate: #Predicate<Account> { !$0.isArchived }, sortBy: [SortDescriptor(\.order)])
+            fallback.fetchLimit = 1
+            account = try? context.fetch(fallback).first
+        }
+
+        let record = Record(kind: .expense, amountCents: amountCents, note: note,
+                            category: category, account: account, ledgerID: settings.currentLedgerID)
+        context.insert(record)
+        try context.save()
+        AppGroup.defaults.set(["title": (category?.name ?? "支出") + (note.isEmpty ? "" : " · \(note)"),
+                               "cents": amountCents, "at": Date.now.timeIntervalSince1970],
+                              forKey: QuickLogStore.lastLogKey)
+        WidgetCenter.shared.reloadAllTimelines()
+        return .result()
+    }
+}
+
+enum QuickLogStore {
+    static let lastLogKey = "lastQuickLog"
+    /// A local (non-syncing) container for writes coming from widgets.
+    static let container = AppGroup.makeContainer(cloudSync: false)
 }

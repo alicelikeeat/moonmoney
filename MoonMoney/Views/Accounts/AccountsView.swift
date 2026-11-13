@@ -12,7 +12,9 @@ struct AccountsView: View {
 
     var body: some View {
         let visible = accounts.filter { showArchived || !$0.isArchived }
-        let totals = netWorth(accounts.filter { !$0.isArchived && $0.includeInNetWorth })
+        // Each balance scans that account's records; compute once per render.
+        let balances = Dictionary(accounts.map { ($0.uuid, $0.balanceCents) }, uniquingKeysWith: { a, _ in a })
+        let totals = netWorth(accounts.filter { !$0.isArchived && $0.includeInNetWorth }, balances: balances)
 
         NavigationStack {
             List {
@@ -31,7 +33,7 @@ struct AccountsView: View {
                             Section {
                                 ForEach(group) { account in
                                     NavigationLink(value: account) {
-                                        AccountRow(account: account)
+                                        AccountRow(account: account, balance: balances[account.uuid] ?? 0)
                                     }
                                     .swipeActions {
                                         Button {
@@ -65,7 +67,7 @@ struct AccountsView: View {
                                     Text(type.title)
                                     Spacer()
                                     let sum = group.filter { !$0.isArchived }.reduce(0) {
-                                        $0 + AppSettings.shared.convertToBase($1.balanceCents, from: $1.currencyCode)
+                                        $0 + AppSettings.shared.convertToBase(balances[$1.uuid] ?? 0, from: $1.currencyCode)
                                     }
                                     Text(Money.format(sum)).monospacedDigit()
                                 }
@@ -120,11 +122,11 @@ struct AccountsView: View {
         }
     }
 
-    private func netWorth(_ accounts: [Account]) -> (assets: Int, liabilities: Int) {
+    private func netWorth(_ accounts: [Account], balances: [UUID: Int]) -> (assets: Int, liabilities: Int) {
         var assets = 0
         var liabilities = 0
         for account in accounts {
-            let balance = AppSettings.shared.convertToBase(account.balanceCents, from: account.currencyCode)
+            let balance = AppSettings.shared.convertToBase(balances[account.uuid] ?? 0, from: account.currencyCode)
             if balance >= 0 { assets += balance } else { liabilities += -balance }
         }
         return (assets, liabilities)
@@ -184,6 +186,7 @@ struct NetWorthCard: View {
 
 struct AccountRow: View {
     let account: Account
+    let balance: Int
 
     var body: some View {
         HStack(spacing: 12) {
@@ -208,9 +211,9 @@ struct AccountRow: View {
                 }
             }
             Spacer()
-            Text(Money.format(account.balanceCents, code: account.currencyCode))
+            Text(Money.format(balance, code: account.currencyCode))
                 .font(.body.weight(.semibold).monospacedDigit())
-                .foregroundStyle(account.balanceCents < 0 ? Color.expense : Color.primary)
+                .foregroundStyle(balance < 0 ? Color.expense : Color.primary)
         }
         .padding(.vertical, 2)
         .opacity(account.isArchived ? 0.55 : 1)
@@ -351,11 +354,10 @@ struct AccountDetailView: View {
     private var trend: some View {
         let cal = Calendar.current
         let today = cal.startOfDay(for: .now)
-        let points: [BalancePoint] = (0..<30).reversed().compactMap { offset in
-            guard let day = cal.date(byAdding: .day, value: -offset, to: today),
-                  let end = cal.date(byAdding: .day, value: 1, to: day) else { return nil }
-            return BalancePoint(date: day, value: Double(account.balanceCents(asOf: end.addingTimeInterval(-1))) / 100)
-        }
+        let days: [Date] = (0..<30).reversed().compactMap { cal.date(byAdding: .day, value: -$0, to: today) }
+        let cutoffs = days.map { (cal.date(byAdding: .day, value: 1, to: $0) ?? $0).addingTimeInterval(-1) }
+        let series = account.balanceSeries(at: cutoffs)
+        let points = zip(days, series).map { BalancePoint(date: $0, value: Double($1) / 100) }
         return VStack(alignment: .leading, spacing: 8) {
             Text("近 30 天余额").font(.subheadline.weight(.semibold))
             Chart {
@@ -395,18 +397,23 @@ struct BalancePoint: Identifiable {
 struct NetWorthTrend: View {
     let accounts: [Account]
 
+    /// One sorted sweep per account instead of 12 full scans.
+    private func monthlyPoints(from thisMonth: Date, calendar cal: Calendar) -> [BalancePoint] {
+        let months: [Date] = (0..<12).reversed().compactMap { cal.date(byAdding: .month, value: -$0, to: thisMonth) }
+        let cutoffs = months.map { min((cal.date(byAdding: .month, value: 1, to: $0) ?? $0).addingTimeInterval(-1), .now) }
+        var totals = Array(repeating: 0, count: months.count)
+        for account in accounts {
+            for (index, balance) in account.balanceSeries(at: cutoffs).enumerated() {
+                totals[index] += AppSettings.shared.convertToBase(balance, from: account.currencyCode)
+            }
+        }
+        return zip(months, totals).map { BalancePoint(date: $0, value: Double($1) / 100) }
+    }
+
     var body: some View {
         let cal = Calendar.current
         let thisMonth = cal.dateInterval(of: .month, for: .now)?.start ?? .now
-        let points: [BalancePoint] = (0..<12).reversed().compactMap { offset in
-            guard let month = cal.date(byAdding: .month, value: -offset, to: thisMonth),
-                  let end = cal.date(byAdding: .month, value: 1, to: month) else { return nil }
-            let cutoff = min(end.addingTimeInterval(-1), .now)
-            let total = accounts.reduce(0) {
-                $0 + AppSettings.shared.convertToBase($1.balanceCents(asOf: cutoff), from: $1.currencyCode)
-            }
-            return BalancePoint(date: month, value: Double(total) / 100)
-        }
+        let points = monthlyPoints(from: thisMonth, calendar: cal)
         let first = points.first?.value ?? 0
         let last = points.last?.value ?? 0
 

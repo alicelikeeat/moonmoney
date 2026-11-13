@@ -1,7 +1,7 @@
-name: Simulator screenshots
+name: Simulator tests and screenshots
 
-# Builds for the iOS simulator, launches each main screen with demo data in
-# light and dark mode, and publishes the screenshots to a rolling release.
+# Runs the unit tests on an iOS simulator, then launches each main screen with
+# demo data in light and dark mode and publishes screenshots + test results.
 
 on:
   push:
@@ -53,15 +53,25 @@ jobs:
           xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
           xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/MoonMoney.app
 
+      - name: Run unit tests
+        run: |
+          mkdir -p shots
+          set +e
+          xcodebuild test -project MoonMoney.xcodeproj -scheme MoonMoney -configuration Debug \
+            -destination "id=$UDID" -derivedDataPath build-tests CODE_SIGNING_ALLOWED=NO 2>&1 | tee test.log > /dev/null
+          echo "${PIPESTATUS[0]}" > test-exit-code
+          grep -E "✔|✘|Test run with|error:|failed|passed" test.log | grep -v "^\s*$" | tail -150 > shots/tests.txt
+          cat shots/tests.txt | tail -40
+
       - name: Capture screens
         run: |
           mkdir -p shots
           for mode in light dark; do
             xcrun simctl ui "$UDID" appearance "$mode"
-            for screen in home stats assets me entry ai; do
+            for screen in home stats assets me entry ai map places alerts; do
               xcrun simctl terminate "$UDID" com.moonmoney.app 2>/dev/null || true
               xcrun simctl launch "$UDID" com.moonmoney.app -demoData -screen "$screen"
-              sleep 7
+              if [ "$screen" = "places" ]; then sleep 14; else sleep 8; fi
               xcrun simctl io "$UDID" screenshot "shots/${mode}-${screen}.png"
             done
           done
@@ -72,7 +82,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete screenshots --yes --cleanup-tag 2>/dev/null || true
-          gh release create screenshots shots/*.png \
+          gh release create screenshots shots/*.png shots/tests.txt \
             --target "$GITHUB_SHA" --prerelease \
             --title "模拟器截图（自动生成）" \
             --notes "commit ${GITHUB_SHA::7} 的模拟器截图，浅色与深色模式。"
+
+      - name: Fail if tests failed
+        run: |
+          code=$(cat test-exit-code 2>/dev/null || echo 1)
+          if [ "$code" != "0" ]; then echo "Unit tests failed (exit $code)"; exit 1; fi

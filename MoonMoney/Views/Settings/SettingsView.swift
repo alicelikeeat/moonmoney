@@ -28,6 +28,9 @@ struct SettingsView: View {
                         NavigationLink { AutoBookkeepingGuideView() } label: {
                             SettingsLabel("自动记账（Apple Pay / 截图）", symbol: "bolt.fill", color: .orange)
                         }
+                        NavigationLink { MoneyMapView() } label: {
+                            SettingsLabel("资金三维地图", symbol: "cube.transparent.fill", color: .teal)
+                        }
                         NavigationLink { ReportsView() } label: {
                             SettingsLabel("月报与年度账单", symbol: "doc.richtext.fill", color: .pink)
                         }
@@ -68,6 +71,9 @@ struct SettingsView: View {
                         NavigationLink { BudgetView() } label: {
                             SettingsLabel("预算", symbol: "target", color: .green)
                         }
+                        NavigationLink { BudgetAlertsView() } label: {
+                            SettingsLabel("预算警报", symbol: "bell.badge.fill", color: .red)
+                        }
                         NavigationLink { RecurringListView() } label: {
                             SettingsLabel("周期记账", symbol: "repeat", color: .purple)
                         }
@@ -102,6 +108,9 @@ struct SettingsView: View {
                         }
                         Toggle(isOn: $settings.weekStartsOnMonday) {
                             SettingsLabel("每周从周一开始", symbol: "calendar", color: .blue)
+                        }
+                        Toggle(isOn: $settings.recordLocation) {
+                            SettingsLabel("记账时记录位置", symbol: "location.fill", color: .blue, subtitle: "用于资金地图，仅保存在本机")
                         }
                         Toggle(isOn: $settings.continuousEntry) {
                             SettingsLabel("连续记账", symbol: "square.stack.3d.up.fill", color: .mint)

@@ -8,6 +8,14 @@ struct BudgetView: View {
         BudgetContent(interval: Periods.month(containing: .now), ledgerID: settings.currentLedgerID)
             .id(settings.currentLedgerID)
             .navigationTitle("预算")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink { BudgetAlertsView() } label: {
+                        Image(systemName: "bell.badge")
+                    }
+                    .accessibilityLabel("预算警报")
+                }
+            }
     }
 }
 

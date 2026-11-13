@@ -86,6 +86,7 @@ struct StatsView: View {
                 }
                 .buttonStyle(.glass)
                 .buttonBorderShape(.circle)
+                .accessibilityLabel("上一期")
 
                 Picker("周期", selection: $periodKind.animation(.smooth)) {
                     ForEach(PeriodKind.allCases) { kind in
@@ -101,6 +102,7 @@ struct StatsView: View {
                 }
                 .buttonStyle(.glass)
                 .buttonBorderShape(.circle)
+                .accessibilityLabel("下一期")
                 .disabled(interval.contains(.now))
             }
         }

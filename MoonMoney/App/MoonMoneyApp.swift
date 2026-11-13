@@ -86,6 +86,17 @@ struct RootView: View {
         .onReceive(NotificationCenter.default.publisher(for: .moonMoneyPendingAction)) { _ in
             if let action = PendingActions.consume() { router.handle(action) }
         }
+        .overlay(alignment: .top) {
+            if let banner = router.banner {
+                BudgetBannerView(banner: banner) {
+                    withAnimation(.smooth) { router.banner = nil }
+                    router.tab = .home
+                    router.homeRoute = .alerts
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .padding(.top, 4)
+            }
+        }
         .overlay {
             if lock.isLocked {
                 LockScreen()

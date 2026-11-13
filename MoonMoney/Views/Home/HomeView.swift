@@ -4,6 +4,9 @@ import SwiftUI
 enum HomeRoute: Hashable {
     case calendar
     case budget
+    case alerts
+    case map
+    case places
 }
 
 struct HomeView: View {
@@ -12,6 +15,7 @@ struct HomeView: View {
     @Query(sort: \Ledger.order) private var ledgers: [Ledger]
     @State private var anchor = Date.now
     @State private var showLedgers = false
+    @State private var path = NavigationPath()
 
     private var currentLedger: Ledger? {
         ledgers.first { $0.uuid == settings.currentLedgerID }
@@ -19,7 +23,7 @@ struct HomeView: View {
 
     var body: some View {
         let interval = Periods.month(containing: anchor)
-        NavigationStack {
+        NavigationStack(path: $path) {
             MonthRecordsList(interval: interval, ledgerID: settings.currentLedgerID, anchor: $anchor)
                 .id("\(settings.currentLedgerID?.uuidString ?? "-")-\(interval.start.timeIntervalSince1970)")
                 .navigationTitle(currentLedger?.name ?? "明细")
@@ -44,11 +48,19 @@ struct HomeView: View {
                         } label: {
                             Image(systemName: currentLedger?.symbol ?? "book.closed")
                         }
+                        .accessibilityLabel("切换账本，当前：\(currentLedger?.name ?? "")")
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         NavigationLink(value: HomeRoute.calendar) {
                             Image(systemName: "calendar")
                         }
+                        .accessibilityLabel("日历")
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink(value: HomeRoute.map) {
+                            Image(systemName: "cube.transparent")
+                        }
+                        .accessibilityLabel("资金三维地图")
                     }
                     ToolbarSpacer(.fixed, placement: .topBarTrailing)
                     ToolbarItem(placement: .topBarTrailing) {
@@ -58,12 +70,16 @@ struct HomeView: View {
                             Image(systemName: "plus")
                         }
                         .buttonStyle(.glassProminent)
+                        .accessibilityLabel("记一笔")
                     }
                 }
                 .navigationDestination(for: HomeRoute.self) { route in
                     switch route {
                     case .calendar: CalendarView()
                     case .budget: BudgetView()
+                    case .alerts: BudgetAlertsView()
+                    case .map: MoneyMapView()
+                    case .places: MoneyMapView(initialMode: .places)
                     }
                 }
                 .navigationDestination(for: Record.self) { record in
@@ -73,6 +89,17 @@ struct HomeView: View {
                     LedgerManagerView()
                 }
         }
+        .onChange(of: router.homeRoute) { _, route in openPending(route) }
+        .onAppear { openPending(router.homeRoute) }
+    }
+}
+
+extension HomeView {
+    /// Pushes a screen requested from elsewhere (banner, deep link, demo mode).
+    fileprivate func openPending(_ route: HomeRoute?) {
+        guard let route else { return }
+        router.homeRoute = nil
+        path.append(route)
     }
 }
 
@@ -114,6 +141,11 @@ struct MonthRecordsList: View {
                     anchor: $anchor
                 )
                 .plainListRow(top: 8, bottom: 8)
+
+                if interval.contains(.now) {
+                    BudgetWarningStrip(statuses: BudgetMonitor.statuses(budgets: budgets, records: records, interval: interval))
+                        .plainListRow(top: 0, bottom: 8)
+                }
 
                 if records.isEmpty {
                     ContentUnavailableView {
@@ -252,6 +284,7 @@ struct MonthSummaryCard: View {
                         Image(systemName: "chevron.left")
                     }
                     .buttonStyle(.inCard(circle: true))
+                    .accessibilityLabel("上个月")
                     Button("本月") {
                         withAnimation(.smooth) { anchor = .now }
                     }
@@ -263,6 +296,7 @@ struct MonthSummaryCard: View {
                         Image(systemName: "chevron.right")
                     }
                     .buttonStyle(.inCard(circle: true))
+                    .accessibilityLabel("下个月")
                 }
             }
 
@@ -417,6 +451,8 @@ struct RecordRow: View {
         }
         .padding(.vertical, 2)
         .opacity(record.excludedFromStats ? 0.6 : 1)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(record.displayTitle)，\(record.kind.title) \(Money.format(record.amountCents, code: record.currencyCode))，\(subtitle)")
     }
 
     private var subtitle: String {

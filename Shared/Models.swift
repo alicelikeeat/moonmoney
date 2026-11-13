@@ -195,6 +195,34 @@ final class Account {
         return balance
     }
 
+    /// Balances at several moments in one pass (sorted sweep) instead of
+    /// rescanning every record for each date — used by the trend charts.
+    func balanceSeries(at cutoffs: [Date]) -> [Int] {
+        var deltas: [(Date, Int)] = []
+        for record in records ?? [] {
+            switch record.kind {
+            case .expense: deltas.append((record.date, -record.amountCents))
+            case .income: deltas.append((record.date, record.amountCents))
+            case .transfer: deltas.append((record.date, -(record.amountCents + record.feeCents)))
+            }
+        }
+        for record in incomingTransfers ?? [] where record.kind == .transfer {
+            deltas.append((record.date, record.destinationAmountCents))
+        }
+        deltas.sort { $0.0 < $1.0 }
+        var balance = initialBalanceCents
+        var index = 0
+        var result: [Int] = []
+        for cutoff in cutoffs.sorted() {
+            while index < deltas.count && deltas[index].0 <= cutoff {
+                balance += deltas[index].1
+                index += 1
+            }
+            result.append(balance)
+        }
+        return result
+    }
+
     var availableCreditCents: Int {
         max(0, creditLimitCents + min(0, balanceCents))
     }
@@ -296,6 +324,10 @@ final class Record {
     var installmentGroup: UUID?
     var installmentIndex: Int = 0
     var installmentCount: Int = 0
+    /// Where the money was spent (optional, for the money map).
+    var latitude: Double?
+    var longitude: Double?
+    var placeName: String = ""
 
     @Attribute(.externalStorage)
     var photo: Data?
@@ -361,6 +393,8 @@ final class Record {
         kind == .transfer ? .transfer : (category?.color ?? .gray)
     }
 
+    var hasLocation: Bool { latitude != nil && longitude != nil }
+
     var reimbursement: ReimbursementState {
         get { ReimbursementState(rawValue: reimbursementRaw) ?? .notNeeded }
         set { reimbursementRaw = newValue.rawValue }
@@ -382,6 +416,8 @@ final class Budget {
     /// nil category = the ledger's overall monthly budget.
     var category: BillCategory?
     var createdAt: Date = Date.now
+    /// Per-budget switch for budget alerts.
+    var alertsEnabled: Bool = true
 
     init(amountCents: Int, ledgerID: UUID?, category: BillCategory? = nil) {
         self.amountCents = amountCents

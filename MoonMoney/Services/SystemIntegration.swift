@@ -25,7 +25,7 @@ enum AppServices {
                 CategoryMemory.learn(record.note, categoryID: category.uuid)
             }
         }
-        Task { await Notifications.checkBudget(context: context) }
+        Task { await BudgetMonitor.evaluate(context: context) }
     }
 
     static func recordDeleted(_ id: UUID) {
@@ -135,38 +135,6 @@ enum Notifications {
                 let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
                 try? await center.add(UNNotificationRequest(identifier: "credit-\(card.uuid.uuidString)", content: content, trigger: trigger))
             }
-        }
-    }
-
-    /// Fires once per month per threshold (80% and 100%) of the overall budget.
-    static func checkBudget(context: ModelContext) async {
-        let settings = AppSettings.shared
-        guard settings.budgetAlertsEnabled else { return }
-        let ledgerID = settings.currentLedgerID
-        let budgets = (try? context.fetch(FetchDescriptor<Budget>(predicate: #Predicate<Budget> { $0.ledgerID == ledgerID }))) ?? []
-        guard let total = budgets.first(where: { $0.category == nil }), total.amountCents > 0 else { return }
-
-        let interval = Periods.month(containing: .now)
-        let start = interval.start, end = interval.end
-        let records = (try? context.fetch(FetchDescriptor<Record>(predicate: #Predicate<Record> {
-            $0.date >= start && $0.date < end && $0.ledgerID == ledgerID && $0.kindRaw == 0
-        }))) ?? []
-        let spent = Stats.summary(records).expense
-        let ratio = Double(spent) / Double(total.amountCents)
-        let monthKey = interval.start.zh("yyyyMM")
-
-        for threshold in [100, 80] where ratio * 100 >= Double(threshold) {
-            let key = "budgetAlert-\(monthKey)-\(threshold)"
-            guard !AppGroup.defaults.bool(forKey: key) else { return }
-            AppGroup.defaults.set(true, forKey: key)
-            let content = UNMutableNotificationContent()
-            content.title = threshold >= 100 ? "本月预算已超支" : "预算已用 80%"
-            content.body = "已支出 \(Money.format(spent)) / 预算 \(Money.format(total.amountCents))，剩余 \(Periods.remainingDays(in: interval)) 天。"
-            content.sound = .default
-            try? await UNUserNotificationCenter.current().add(
-                UNNotificationRequest(identifier: key, content: content, trigger: nil)
-            )
-            return
         }
     }
 }

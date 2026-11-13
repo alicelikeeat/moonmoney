@@ -160,6 +160,11 @@ enum Seed {
         let income = categories.filter { $0.kind == .income }
         let cal = Calendar.current
         let notes = ["午饭", "咖啡", "地铁", "超市", "晚餐", "打车", "电影", "水果", "外卖", "奶茶", ""]
+        let places: [(String, Double, Double)] = [
+            ("静安寺", 31.2239, 121.4450), ("陆家嘴", 31.2397, 121.4998), ("徐家汇", 31.1955, 121.4370),
+            ("人民广场", 31.2323, 121.4757), ("新天地", 31.2190, 121.4752), ("五角场", 31.2986, 121.5146),
+            ("虹桥", 31.1979, 121.3363), ("前滩", 31.1578, 121.4720),
+        ]
         var generator = SystemRandomNumberGenerator()
 
         for dayOffset in 0..<90 {
@@ -175,6 +180,11 @@ enum Seed {
                 let record = Record(kind: .expense, amountCents: cents, date: date,
                                     note: notes.randomElement(using: &generator) ?? "",
                                     category: category, account: account, ledgerID: ledgerID)
+                if Int.random(in: 0..<10, using: &generator) < 8, let place = places.randomElement(using: &generator) {
+                    record.latitude = place.1 + Double.random(in: -0.004...0.004, using: &generator)
+                    record.longitude = place.2 + Double.random(in: -0.004...0.004, using: &generator)
+                    record.placeName = place.0
+                }
                 context.insert(record)
             }
             if cal.component(.day, from: day) == 10, let salary = income.first, let account = accounts.first(where: { $0.type == .debit }) {

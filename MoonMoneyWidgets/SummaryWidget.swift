@@ -28,6 +28,17 @@ struct WidgetRecent: Hashable, Identifiable {
     let date: Date
 }
 
+/// A frequent expense that can be logged with one tap.
+struct WidgetPreset: Hashable, Identifiable {
+    var id: String { "\(categoryID.uuidString)-\(cents)-\(note)" }
+    let categoryID: UUID
+    let symbol: String
+    let colorHex: String
+    let cents: Int
+    let note: String
+    let label: String
+}
+
 struct SummaryEntry: TimelineEntry {
     let date: Date
     let currency: String
@@ -39,6 +50,9 @@ struct SummaryEntry: TimelineEntry {
     let top: [WidgetCategory]
     let week: [WidgetDay]
     let recent: [WidgetRecent]
+    var presets: [WidgetPreset] = []
+    /// "已记 瑞幸 ¥15" shown briefly after a one-tap log.
+    var lastLog: String?
 
     var budgetRatio: Double { budget > 0 ? Double(monthExpense) / Double(budget) : 0 }
     var budgetRemaining: Int { budget - monthExpense }
@@ -103,6 +117,14 @@ enum WidgetData {
             return WidgetDay(date: day, cents: daily[day]?.expense ?? 0)
         }
 
+        let presets = frequentPresets(context: context, ledgerID: ledgerID)
+        var lastLog: String?
+        if let info = AppGroup.defaults.dictionary(forKey: QuickLogStore.lastLogKey),
+           let at = info["at"] as? Double, Date.now.timeIntervalSince1970 - at < 90,
+           let title = info["title"] as? String, let cents = info["cents"] as? Int {
+            lastLog = "已记 \(title) \(Money.format(cents, code: settings.baseCurrency))"
+        }
+
         let recent = records.filter { $0.kind != .transfer && $0.date <= .now }.prefix(4).map {
             WidgetRecent(id: $0.uuid, title: $0.note.isEmpty ? $0.displayTitle : "\($0.displayTitle) · \($0.note)",
                          symbol: $0.displaySymbol, colorHex: $0.category?.colorHex ?? "#8E8E93",
@@ -119,8 +141,32 @@ enum WidgetData {
             budget: budget,
             top: Array(top),
             week: week,
-            recent: Array(recent)
+            recent: Array(recent),
+            presets: presets,
+            lastLog: lastLog
         )
+    }
+
+    /// Same category + amount + note logged at least twice in 60 days.
+    private static func frequentPresets(context: ModelContext, ledgerID: UUID?) -> [WidgetPreset] {
+        let since = Calendar.current.date(byAdding: .day, value: -60, to: .now) ?? .distantPast
+        let descriptor = FetchDescriptor<Record>(predicate: #Predicate<Record> {
+            $0.date >= since && $0.ledgerID == ledgerID && $0.kindRaw == 0
+        })
+        let records = (try? context.fetch(descriptor)) ?? []
+        let groups = Dictionary(grouping: records.filter { $0.category != nil }) { record in
+            "\(record.category?.uuid.uuidString ?? "")|\(record.amountCents)|\(record.note)"
+        }
+        return groups.values
+            .filter { $0.count >= 2 }
+            .sorted { $0.count > $1.count }
+            .prefix(3)
+            .compactMap { items -> WidgetPreset? in
+                guard let first = items.first, let category = first.category else { return nil }
+                let label = first.note.isEmpty ? category.name : first.note
+                return WidgetPreset(categoryID: category.uuid, symbol: category.symbol, colorHex: category.colorHex,
+                                    cents: first.amountCents, note: first.note, label: String(label.prefix(4)))
+            }
     }
 
     private static func categoryHex(for id: UUID, in records: [Record]) -> String {
@@ -218,7 +264,16 @@ struct SummaryWidgetView: View {
                 if entry.budget > 0 { budgetBar }
                 Text("收入 \(money(entry.monthIncome))").font(.caption2).foregroundStyle(.white.opacity(0.8))
                 Spacer(minLength: 0)
-                quickButtons
+                if let lastLog = entry.lastLog {
+                    Label(lastLog, systemImage: "checkmark.circle.fill")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                } else if entry.presets.isEmpty {
+                    quickButtons
+                } else {
+                    presetRow(Array(entry.presets.prefix(2)))
+                }
             }
             VStack(alignment: .leading, spacing: 7) {
                 ForEach(entry.top.prefix(3), id: \.self) { item in
@@ -281,9 +336,38 @@ struct SummaryWidgetView: View {
                 }
             }
             Spacer(minLength: 0)
+            if let lastLog = entry.lastLog {
+                Label(lastLog, systemImage: "checkmark.circle.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white)
+            } else if !entry.presets.isEmpty {
+                presetRow(entry.presets)
+            }
             quickButtons
         }
         .containerBackground(for: .widget) { background }
+    }
+
+    /// One-tap buttons that log a frequent expense in place.
+    private func presetRow(_ presets: [WidgetPreset]) -> some View {
+        HStack(spacing: 6) {
+            ForEach(presets) { preset in
+                Button(intent: QuickLogIntent(amountCents: preset.cents, categoryID: preset.categoryID, note: preset.note)) {
+                    HStack(spacing: 4) {
+                        SymbolGlyph(preset.symbol).font(.system(size: 10, weight: .bold))
+                        Text("\(preset.label) \(Money.compact(preset.cents))")
+                            .font(.caption2.weight(.semibold).monospacedDigit())
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(Color(hex: preset.colorHex).opacity(0.55), in: .capsule)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("记一笔 \(preset.label) \(money(preset.cents))")
+            }
+        }
     }
 
     // MARK: Lock screen

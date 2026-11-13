@@ -18,6 +18,13 @@
 			remoteGlobalIDString = A1B2C3D40000000000000070;
 			remoteInfo = MoonMoneyWidgets;
 		};
+		A1B2C3D400000000000000A4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1B2C3D40000000000000050 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A1B2C3D40000000000000040;
+			remoteInfo = MoonMoney;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,6 +44,7 @@
 /* Begin PBXFileReference section */
 		A1B2C3D40000000000000001 /* MoonMoney.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MoonMoney.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B2C3D40000000000000002 /* MoonMoneyWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MoonMoneyWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1B2C3D40000000000000003 /* MoonMoneyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MoonMoneyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -53,6 +61,11 @@
 		A1B2C3D40000000000000012 /* MoonMoneyWidgets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = MoonMoneyWidgets;
+			sourceTree = "<group>";
+		};
+		A1B2C3D40000000000000013 /* MoonMoneyTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MoonMoneyTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -72,6 +85,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1B2C3D400000000000000A2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -81,6 +101,7 @@
 				A1B2C3D40000000000000010 /* MoonMoney */,
 				A1B2C3D40000000000000011 /* Shared */,
 				A1B2C3D40000000000000012 /* MoonMoneyWidgets */,
+				A1B2C3D40000000000000013 /* MoonMoneyTests */,
 				A1B2C3D40000000000000031 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +111,7 @@
 			children = (
 				A1B2C3D40000000000000001 /* MoonMoney.app */,
 				A1B2C3D40000000000000002 /* MoonMoneyWidgets.appex */,
+				A1B2C3D40000000000000003 /* MoonMoneyTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -145,6 +167,29 @@
 			productReference = A1B2C3D40000000000000002 /* MoonMoneyWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		A1B2C3D400000000000000A0 /* MoonMoneyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1B2C3D400000000000000B0 /* Build configuration list for PBXNativeTarget "MoonMoneyTests" */;
+			buildPhases = (
+				A1B2C3D400000000000000A1 /* Sources */,
+				A1B2C3D400000000000000A2 /* Frameworks */,
+				A1B2C3D400000000000000A3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A1B2C3D400000000000000A5 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A1B2C3D40000000000000013 /* MoonMoneyTests */,
+			);
+			name = MoonMoneyTests;
+			packageProductDependencies = (
+			);
+			productName = MoonMoneyTests;
+			productReference = A1B2C3D40000000000000003 /* MoonMoneyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -160,6 +205,10 @@
 					};
 					A1B2C3D40000000000000070 = {
 						CreatedOnToolsVersion = 26.0;
+					};
+					A1B2C3D400000000000000A0 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = A1B2C3D40000000000000040;
 					};
 				};
 			};
@@ -180,6 +229,7 @@
 			targets = (
 				A1B2C3D40000000000000040 /* MoonMoney */,
 				A1B2C3D40000000000000070 /* MoonMoneyWidgets */,
+				A1B2C3D400000000000000A0 /* MoonMoneyTests */,
 			);
 		};
 /* End PBXProject section */
@@ -193,6 +243,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A1B2C3D40000000000000073 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1B2C3D400000000000000A3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -216,6 +273,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1B2C3D400000000000000A1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -223,6 +287,11 @@
 			isa = PBXTargetDependency;
 			target = A1B2C3D40000000000000070 /* MoonMoneyWidgets */;
 			targetProxy = A1B2C3D40000000000000091 /* PBXContainerItemProxy */;
+		};
+		A1B2C3D400000000000000A5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A1B2C3D40000000000000040 /* MoonMoney */;
+			targetProxy = A1B2C3D400000000000000A4 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -301,6 +370,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = MoonMoney;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "使用面容 ID 解锁 MoonMoney，保护你的账目隐私。";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "记账时可附上消费地点，用于资金地图。不会上传你的位置。";
 				INFOPLIST_KEY_NSSupportsLiveActivities = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -337,6 +407,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = MoonMoney;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "使用面容 ID 解锁 MoonMoney，保护你的账目隐私。";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "记账时可附上消费地点，用于资金地图。不会上传你的位置。";
 				INFOPLIST_KEY_NSSupportsLiveActivities = NO;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -412,6 +483,44 @@
 			};
 			name = Release;
 		};
+		A1B2C3D400000000000000B1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.moonmoney.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MoonMoney.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MoonMoney";
+			};
+			name = Debug;
+		};
+		A1B2C3D400000000000000B2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.moonmoney.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MoonMoney.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MoonMoney";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -438,6 +547,15 @@
 			buildConfigurations = (
 				A1B2C3D40000000000000081 /* Debug */,
 				A1B2C3D40000000000000082 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1B2C3D400000000000000B0 /* Build configuration list for PBXNativeTarget "MoonMoneyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B2C3D400000000000000B1 /* Debug */,
+				A1B2C3D400000000000000B2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

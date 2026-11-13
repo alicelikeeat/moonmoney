@@ -81,6 +81,21 @@ final class Router {
     var tab: AppTab = .home
     var entry: EntryRequest?
     var showAIEntry = false
+    /// A Home screen to push next (consumed by HomeView).
+    var homeRoute: HomeRoute?
+    /// In-app budget alert banner.
+    var banner: BudgetBanner?
+
+    func showBanner(_ banner: BudgetBanner) {
+        withAnimation(.bouncy) { self.banner = banner }
+        let id = banner.id
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            if self.banner?.id == id {
+                withAnimation(.smooth) { self.banner = nil }
+            }
+        }
+    }
     /// Record opened from Spotlight.
     var detail: Record?
 
@@ -105,6 +120,12 @@ final class Router {
             newRecord(kind: kind)
         case "ai": showAIEntry = true
         case "stats": tab = .stats
+        case "map":
+            tab = .home
+            homeRoute = .map
+        case "alerts":
+            tab = .home
+            homeRoute = .alerts
         case "assets": tab = .assets
         default: tab = .home
         }

@@ -65,10 +65,12 @@ enum BackupService {
         var installmentGroup: UUID?; var installmentIndex: Int; var installmentCount: Int
         var photo: Data?
         var categoryID: UUID?; var accountID: UUID?; var toAccountID: UUID?; var tagIDs: [UUID]
+        var latitude: Double?; var longitude: Double?; var placeName: String?
     }
 
     struct BudgetDTO: Codable {
         var uuid: UUID; var amountCents: Int; var ledgerID: UUID?; var categoryID: UUID?; var createdAt: Date
+        var alertsEnabled: Bool?
     }
 
     struct RuleDTO: Codable {
@@ -137,11 +139,12 @@ enum BackupService {
                           installmentGroup: $0.installmentGroup, installmentIndex: $0.installmentIndex,
                           installmentCount: $0.installmentCount, photo: includePhotos ? $0.photo : nil,
                           categoryID: $0.category?.uuid, accountID: $0.account?.uuid, toAccountID: $0.toAccount?.uuid,
-                          tagIDs: ($0.tags ?? []).map(\.uuid))
+                          tagIDs: ($0.tags ?? []).map(\.uuid),
+                          latitude: $0.latitude, longitude: $0.longitude, placeName: $0.placeName)
             },
             budgets: all(Budget.self).map {
                 BudgetDTO(uuid: $0.uuid, amountCents: $0.amountCents, ledgerID: $0.ledgerID,
-                          categoryID: $0.category?.uuid, createdAt: $0.createdAt)
+                          categoryID: $0.category?.uuid, createdAt: $0.createdAt, alertsEnabled: $0.alertsEnabled)
             },
             rules: all(RecurringRule.self).map {
                 RuleDTO(uuid: $0.uuid, name: $0.name, kindRaw: $0.kindRaw, amountCents: $0.amountCents, note: $0.note,
@@ -230,12 +233,15 @@ enum BackupService {
             record.installmentCount = dto.installmentCount; record.photo = dto.photo
             record.toAccount = dto.toAccountID.flatMap { accounts[$0] }
             record.tags = dto.tagIDs.compactMap { tags[$0] }
+            record.latitude = dto.latitude; record.longitude = dto.longitude
+            record.placeName = dto.placeName ?? ""
             context.insert(record)
         }
         for dto in backup.budgets {
             let budget = Budget(amountCents: dto.amountCents, ledgerID: dto.ledgerID,
                                 category: dto.categoryID.flatMap { categories[$0] })
             budget.uuid = dto.uuid; budget.createdAt = dto.createdAt
+            budget.alertsEnabled = dto.alertsEnabled ?? true
             context.insert(budget)
         }
         for dto in backup.rules {

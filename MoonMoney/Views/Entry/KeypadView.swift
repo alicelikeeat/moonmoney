@@ -75,6 +75,8 @@ struct KeypadView: View {
         .menuStyle(.button)
         .buttonStyle(.glass)
         .buttonBorderShape(.roundedRectangle(radius: 16))
+        .accessibilityLabel("删除")
+        .accessibilityHint("长按可清空")
     }
 
     private func operatorKey(primary: String, secondary: String) -> some View {
@@ -97,6 +99,8 @@ struct KeypadView: View {
         .menuStyle(.button)
         .buttonStyle(.glass)
         .buttonBorderShape(.roundedRectangle(radius: 16))
+        .accessibilityLabel(primary == "+" ? "加" : "减")
+        .accessibilityHint(secondary == "×" ? "长按选择乘" : "长按选择除")
     }
 
     private var doneKey: some View {

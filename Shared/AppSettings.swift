@@ -77,6 +77,21 @@ final class AppSettings {
         didSet { defaults.set(creditDueAlertsEnabled, forKey: Keys.creditAlerts) }
     }
 
+    /// Budget usage percentages that trigger an alert, e.g. [50, 80, 100].
+    var budgetThresholds: [Int] {
+        didSet { defaults.set(budgetThresholds, forKey: Keys.thresholds) }
+    }
+
+    /// Warn when the current spending pace would overrun a budget before month end.
+    var budgetPaceAlerts: Bool {
+        didSet { defaults.set(budgetPaceAlerts, forKey: Keys.paceAlerts) }
+    }
+
+    /// Save the current location with new records (for the money map).
+    var recordLocation: Bool {
+        didSet { defaults.set(recordLocation, forKey: Keys.recordLocation) }
+    }
+
     /// Use Apple Intelligence when the device supports it.
     var aiEnabled: Bool {
         didSet { defaults.set(aiEnabled, forKey: Keys.ai) }
@@ -106,6 +121,10 @@ final class AppSettings {
         budgetAlertsEnabled = defaults.object(forKey: Keys.budgetAlerts) as? Bool ?? true
         creditDueAlertsEnabled = defaults.object(forKey: Keys.creditAlerts) as? Bool ?? true
         aiEnabled = defaults.object(forKey: Keys.ai) as? Bool ?? true
+        let thresholds = (defaults.array(forKey: Keys.thresholds) as? [Int]) ?? [80, 100]
+        budgetThresholds = thresholds.isEmpty ? [100] : thresholds.sorted()
+        budgetPaceAlerts = defaults.object(forKey: Keys.paceAlerts) as? Bool ?? true
+        recordLocation = defaults.bool(forKey: Keys.recordLocation)
     }
 
     /// Re-reads values another process (the app vs. the widget) may have changed.
@@ -164,6 +183,9 @@ final class AppSettings {
         static let budgetAlerts = "budgetAlertsEnabled"
         static let creditAlerts = "creditDueAlertsEnabled"
         static let ai = "aiEnabled"
+        static let thresholds = "budgetThresholds"
+        static let paceAlerts = "budgetPaceAlerts"
+        static let recordLocation = "recordLocation"
     }
 }
 

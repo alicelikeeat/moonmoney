@@ -33,6 +33,8 @@ struct EntrySheet: View {
     @State private var installments = 1
     @State private var installmentFeeRate = 0.0
     @State private var categoryTouched = false
+    @State private var place: LocationService.Place?
+    @State private var locating = false
 
     @State private var showTags = false
     @State private var showCategoryManager = false
@@ -61,6 +63,9 @@ struct EntrySheet: View {
         _member = State(initialValue: record?.member ?? "")
         _reimbursement = State(initialValue: record?.reimbursement ?? .notNeeded)
         _categoryTouched = State(initialValue: record != nil)
+        if let record, let lat = record.latitude, let lon = record.longitude {
+            _place = State(initialValue: LocationService.Place(latitude: lat, longitude: lon, name: record.placeName))
+        }
     }
 
     private var kindCategories: [BillCategory] {
@@ -289,6 +294,21 @@ struct EntrySheet: View {
                         }
                     }
 
+                    Button {
+                        Task { await locate() }
+                    } label: {
+                        GlassChip(title: locating ? "定位中…" : (place.map { $0.name.isEmpty ? "已定位" : $0.name } ?? "位置"),
+                                  symbol: place == nil ? "location" : "location.fill",
+                                  tint: .blue, isActive: place != nil)
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        if place != nil {
+                            Button("移除位置", systemImage: "location.slash", role: .destructive) { place = nil }
+                        }
+                    }
+                    .accessibilityLabel(place == nil ? "添加位置" : "位置：\(place?.name ?? "")")
+
                     if !settings.members.isEmpty {
                         Menu {
                             Picker("成员", selection: $member) {
@@ -349,6 +369,9 @@ struct EntrySheet: View {
 
     private func applyDefaults() {
         guard !isEditing else { return }
+        if settings.recordLocation && place == nil {
+            Task { await locate() }
+        }
         if account == nil {
             account = accounts.first { $0.uuid == settings.defaultAccountID } ?? accounts.first
         }
@@ -357,6 +380,17 @@ struct EntrySheet: View {
         } else if category == nil {
             category = kindCategories.first
         }
+    }
+
+    private func locate() async {
+        guard !locating else { return }
+        locating = true
+        let found = await LocationService.currentPlace()
+        withAnimation(.smooth) {
+            place = found ?? place
+            locating = false
+        }
+        if found == nil { Haptics.warning() } else { Haptics.tap() }
     }
 
     /// Hands over to the AI sheet instead of stacking a second glass sheet on top.
@@ -397,8 +431,16 @@ struct EntrySheet: View {
             record.installmentCount = count
             record.tags = tags
             record.member = member
+        record.latitude = place?.latitude
+        record.longitude = place?.longitude
+        record.placeName = place?.name ?? ""
             record.excludedFromStats = excluded
-            if index == 0 { record.photo = photo }
+            if index == 0 {
+                record.photo = photo
+                record.latitude = place?.latitude
+                record.longitude = place?.longitude
+                record.placeName = place?.name ?? ""
+            }
             context.insert(record)
             created.append(record)
         }

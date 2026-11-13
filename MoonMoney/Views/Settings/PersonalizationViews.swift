@@ -254,7 +254,10 @@ struct ReminderSettingsView: View {
                             }
                         ), displayedComponents: .hourAndMinute)
                     }
-                    Toggle("预算预警（80% / 超支）", isOn: $settings.budgetAlertsEnabled)
+                    NavigationLink { BudgetAlertsView() } label: {
+                    LabeledContent("预算警报", value: settings.budgetAlertsEnabled
+                        ? settings.budgetThresholds.map { "\($0)%" }.joined(separator: " / ") : "已关闭")
+                }
                     Toggle("信用卡还款提醒（提前 2 天）", isOn: $settings.creditDueAlertsEnabled)
                 } footer: {
                     Text(denied ? "通知权限已关闭，请到「设置 > 通知 > MoonMoney」开启。" : "提醒全部在本机生成，不会上传任何数据。")
