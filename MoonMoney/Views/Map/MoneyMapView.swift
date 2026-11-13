@@ -382,14 +382,16 @@ private struct SpendingPlacesView: View {
         }
     }
 
-    /// Groups records within ~150 m (and by place name) into one bubble.
+    /// Groups records by place name, or by a ~500 m grid when unnamed,
+    /// so nearby spending forms one readable pillar.
     private func buildClusters() -> [PlaceCluster] {
         let start = range.start
         let located = Stats.counted(records).filter { $0.date >= start && $0.hasLocation }
         let groups = Dictionary(grouping: located) { record -> String in
-            let lat = ((record.latitude ?? 0) * 700).rounded()
-            let lon = ((record.longitude ?? 0) * 700).rounded()
-            return "\(lat),\(lon)"
+            if !record.placeName.isEmpty { return "name:\(record.placeName)" }
+            let lat = ((record.latitude ?? 0) * 200).rounded()
+            let lon = ((record.longitude ?? 0) * 200).rounded()
+            return "grid:\(lat),\(lon)"
         }
         return groups.map { key, items in
             let lat = items.compactMap(\.latitude).reduce(0, +) / Double(items.count)
