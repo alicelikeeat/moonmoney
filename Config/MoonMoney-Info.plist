@@ -4,7 +4,11 @@
 <dict>
 	<key>UIAppFonts</key>
 	<array>
+		<string>ArkPixel12.otf</string>
+		<string>FusionPixel8.otf</string>
 		<string>MoonPixelCJK.otf</string>
+		<string>PressStart2P-Regular.ttf</string>
+		<string>Silkscreen-Regular.ttf</string>
 	</array>
 	<key>CFBundleURLTypes</key>
 	<array>

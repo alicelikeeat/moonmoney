@@ -19,6 +19,12 @@ enum DemoMode {
         if let index = arguments.firstIndex(of: "-skin"), index + 1 < arguments.count {
             AppSettings.shared.skinRaw = arguments[index + 1]
         }
+        if let index = arguments.firstIndex(of: "-pixelFont"), index + 1 < arguments.count {
+            AppSettings.shared.pixelFontRaw = arguments[index + 1]
+        }
+        if let index = arguments.firstIndex(of: "-moneyFont"), index + 1 < arguments.count {
+            AppSettings.shared.moneyFontRaw = arguments[index + 1]
+        }
         if arguments.contains("-demoData") {
             let count = (try? context.fetchCount(FetchDescriptor<Record>())) ?? 0
             if count == 0 {

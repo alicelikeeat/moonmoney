@@ -24,6 +24,15 @@ struct SkinPickerView: View {
                 }
 
                 if settings.skin == .pixel {
+                    fontSection(title: "文字字体", fonts: PixelFont.textFonts, selected: settings.pixelFontRaw,
+                                sample: "十一月支出 ¥1,513.06") { id in
+                        switchFont { settings.pixelFontRaw = id }
+                    }
+                    fontSection(title: "金额字体", fonts: PixelFont.moneyFonts, selected: settings.moneyFontRaw,
+                                sample: "¥1,513.06", includeFollowText: true) { id in
+                        switchFont { settings.moneyFontRaw = id }
+                    }
+
                     Button {
                         setPixelIcon()
                     } label: {
@@ -51,6 +60,57 @@ struct SkinPickerView: View {
         }
         .background { AmbientBackground() }
         .navigationTitle("界面皮肤")
+    }
+
+    /// Updates UIKit chrome fonts before the change rebuilds the view tree.
+    private func switchFont(_ change: () -> Void) {
+        change()
+        PixelChrome.apply(pixel: true)
+        Haptics.tap()
+    }
+
+    private func fontSection(title: String, fonts: [PixelFontInfo], selected: String, sample: String,
+                             includeFollowText: Bool = false, choose: @escaping (String) -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(Font.skin(.headline))
+            if includeFollowText {
+                fontRow(title: "跟随文字字体", detail: "金额与正文同一款", sample: sample, fontName: PixelFont.name,
+                        size: 22, selected: selected == "body") { choose("body") }
+            }
+            ForEach(fonts, id: \.id) { info in
+                fontRow(title: info.title, detail: info.detail, sample: sample,
+                        fontName: PixelFont.postScriptName(info),
+                        size: PixelFont.crisp(22 * info.moneyScale, grid: info.grid),
+                        selected: selected == info.id) { choose(info.id) }
+            }
+        }
+        .glassCard(cornerRadius: 22, padding: 14)
+    }
+
+    private func fontRow(title: String, detail: String, sample: String, fontName: String?, size: CGFloat,
+                         selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(title).font(Font.skin(.subheadline))
+                        Text(detail).font(Font.skin(.caption)).foregroundStyle(.secondary)
+                    }
+                    Text(sample)
+                        .font(fontName.map { .custom($0, fixedSize: size) } ?? .system(size: size, design: .monospaced))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: selected ? "checkmark.square.fill" : "square")
+                    .font(.title3)
+                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
+            }
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title)\(selected ? "，已选中" : "")")
     }
 
     private func setPixelIcon() {
@@ -109,7 +169,7 @@ private struct SkinPreviewCard: View {
         let content = VStack(alignment: .leading, spacing: 6) {
             Text("十一月支出").font(Font.skin(.caption)).foregroundStyle(.secondary)
             Text("¥1,654.37")
-                .font(skin == .pixel ? .custom(PixelFont.name ?? "Menlo", fixedSize: 30) : .system(size: 30, weight: .bold, design: .rounded))
+                .font(skin == .pixel ? Font.money(30) : .system(size: 30, weight: .bold, design: .rounded))
             HStack(spacing: 2) {
                 ForEach(0..<12, id: \.self) { index in
                     if skin == .pixel {

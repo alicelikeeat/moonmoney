@@ -23,9 +23,10 @@ struct MoonMoneyApp: App {
                 // Default font for every Text without an explicit one (pixel font in the pixel skin).
                 .font(Font.skin(.body))
                 // UIKit chrome reads its fonts at creation, so rebuild the tree when the skin changes.
-                .id(settings.skinRaw)
+                .id("\(settings.skinRaw)-\(settings.pixelFontRaw)-\(settings.moneyFontRaw)")
                 .onAppear { PixelChrome.apply(pixel: settings.isPixelSkin) }
                 .onChange(of: settings.skinRaw) { PixelChrome.apply(pixel: settings.isPixelSkin) }
+                .onChange(of: settings.pixelFontRaw) { PixelChrome.apply(pixel: settings.isPixelSkin) }
                 .environment(settings)
                 .environment(router)
                 .environment(lock)

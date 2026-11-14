@@ -288,22 +288,38 @@ struct SettingsLabel: View {
     }
 }
 
-/// Licenses for bundled third-party assets (the pixel font is SIL OFL 1.1).
+/// Licenses for the bundled pixel fonts (all SIL OFL 1.1 or more permissive).
 struct LicensesView: View {
-    private var text: String {
-        guard let url = Bundle.main.url(forResource: "OFL", withExtension: "txt"),
-              let text = try? String(contentsOf: url, encoding: .utf8) else { return "未找到许可文件。" }
-        return text
-    }
+    private let files: [(title: String, file: String)] = [
+        ("方舟像素 Ark Pixel Font", "OFL-ArkPixel"),
+        ("缝合像素 Fusion Pixel Font", "OFL-FusionPixel"),
+        ("MoonPixel CJK（GNU Unifont 子集）", "OFL-Unifont"),
+        ("Press Start 2P", "OFL-PressStart2P"),
+        ("Silkscreen", "OFL-Silkscreen"),
+    ]
 
     var body: some View {
-        ScrollView {
-            Text(text)
-                .font(.system(.caption, design: .monospaced))
-                .textSelection(.enabled)
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        List {
+            ForEach(files, id: \.file) { item in
+                NavigationLink(item.title) {
+                    ScrollView {
+                        Text(load(item.file))
+                            .font(.system(.caption, design: .monospaced))
+                            .textSelection(.enabled)
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .navigationTitle(item.title)
+                    .navigationBarTitleDisplayMode(.inline)
+                }
+            }
         }
         .navigationTitle("开源许可")
+    }
+
+    private func load(_ name: String) -> String {
+        guard let url = Bundle.main.url(forResource: name, withExtension: "txt"),
+              let text = try? String(contentsOf: url, encoding: .utf8) else { return "未找到许可文件。" }
+        return text
     }
 }

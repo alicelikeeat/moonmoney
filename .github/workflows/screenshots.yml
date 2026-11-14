@@ -85,8 +85,16 @@ jobs:
               xcrun simctl io "$UDID" screenshot "shots/pixel-${mode}-${screen}.png"
             done
           done
+          # Font variants
+          xcrun simctl ui "$UDID" appearance light
+          for font in fusion8 unifont; do
+            xcrun simctl terminate "$UDID" com.moonmoney.app 2>/dev/null || true
+            xcrun simctl launch "$UDID" com.moonmoney.app -demoData -skin pixel -pixelFont "$font" -moneyFont pressStart -screen home
+            sleep 8
+            xcrun simctl io "$UDID" screenshot "shots/pixel-font-${font}.png"
+          done
           xcrun simctl terminate "$UDID" com.moonmoney.app 2>/dev/null || true
-          xcrun simctl launch "$UDID" com.moonmoney.app -skin liquid
+          xcrun simctl launch "$UDID" com.moonmoney.app -skin liquid -pixelFont ark -moneyFont body
           sleep 3
           ls -la shots
 

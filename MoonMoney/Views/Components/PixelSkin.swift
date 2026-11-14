@@ -186,29 +186,71 @@ extension View {
 
 // MARK: - Fonts
 
-/// Registers the bundled pixel font (a subset of GNU Unifont, SIL OFL 1.1)
-/// and remembers the name iOS knows it by.
+/// A bundled pixel font: its file, how big one of its pixels is, and its UI name.
+struct PixelFontInfo {
+    let id: String
+    let title: String
+    let detail: String
+    let file: String
+    let ext: String
+    /// Design grid in pixels per em; sizes that are multiples of (grid / 3) pt render crisp on @3x screens.
+    let grid: CGFloat
+    /// Width multiplier for wide display fonts so big amounts still fit.
+    var moneyScale: CGFloat = 1
+}
+
 enum PixelFont {
-    static let family = "MoonPixel CJK"
+    static let textFonts: [PixelFontInfo] = [
+        PixelFontInfo(id: "ark", title: "方舟像素", detail: "12px · 精修中文，推荐", file: "ArkPixel12", ext: "otf", grid: 12),
+        PixelFontInfo(id: "fusion8", title: "缝合像素", detail: "8px · 小巧复古", file: "FusionPixel8", ext: "otf", grid: 8),
+        PixelFontInfo(id: "unifont", title: "Unifont", detail: "16px · 粗犷终端风", file: "MoonPixelCJK", ext: "otf", grid: 16),
+    ]
 
-    /// PostScript name of the loaded font, or nil if it could not be loaded.
-    static let name: String? = {
-        if let existing = UIFont.fontNames(forFamilyName: family).first { return existing }
-        guard let url = Bundle.main.url(forResource: "MoonPixelCJK", withExtension: "otf") else { return nil }
-        var error: Unmanaged<CFError>?
-        CTFontManagerRegisterFontsForURL(url as CFURL, .process, &error)
-        if let existing = UIFont.fontNames(forFamilyName: family).first { return existing }
-        guard let descriptors = CTFontManagerCreateFontDescriptorsFromURL(url as CFURL) as? [CTFontDescriptor],
-              let first = descriptors.first,
-              let ps = CTFontDescriptorCopyAttribute(first, kCTFontNameAttribute) as? String else { return nil }
-        return UIFont(name: ps, size: 12) != nil ? ps : nil
-    }()
+    static let moneyFonts: [PixelFontInfo] = [
+        PixelFontInfo(id: "pressStart", title: "Press Start 2P", detail: "街机风", file: "PressStart2P-Regular", ext: "ttf", grid: 8, moneyScale: 0.62),
+        PixelFontInfo(id: "silkscreen", title: "Silkscreen", detail: "小巧清爽", file: "Silkscreen-Regular", ext: "ttf", grid: 8, moneyScale: 0.8),
+    ]
 
+    nonisolated(unsafe) private static var cache: [String: String] = [:]
+
+    /// Registers the file if needed and returns the PostScript name iOS knows it by.
+    static func postScriptName(_ info: PixelFontInfo) -> String? {
+        if let cached = cache[info.id] { return cached.isEmpty ? nil : cached }
+        var result: String?
+        if let url = Bundle.main.url(forResource: info.file, withExtension: info.ext),
+           let descriptors = CTFontManagerCreateFontDescriptorsFromURL(url as CFURL) as? [CTFontDescriptor],
+           let first = descriptors.first,
+           let ps = CTFontDescriptorCopyAttribute(first, kCTFontNameAttribute) as? String {
+            if UIFont(name: ps, size: 12) == nil {
+                var error: Unmanaged<CFError>?
+                CTFontManagerRegisterFontsForURL(url as CFURL, .process, &error)
+            }
+            if UIFont(name: ps, size: 12) != nil { result = ps }
+        }
+        cache[info.id] = result ?? ""
+        return result
+    }
+
+    static var currentText: PixelFontInfo {
+        textFonts.first { $0.id == AppSettings.shared.pixelFontRaw } ?? textFonts[0]
+    }
+
+    static var currentMoney: PixelFontInfo? {
+        moneyFonts.first { $0.id == AppSettings.shared.moneyFontRaw }
+    }
+
+    /// PostScript name of the active text font, or nil if it could not be loaded.
+    static var name: String? { postScriptName(currentText) }
     static var isLoaded: Bool { name != nil }
 
-    /// The glyphs are drawn on a 16-pixel grid, so sizes near multiples of 4 stay crisp.
+    /// Rounds a size to the font's crisp step (one font pixel = whole device pixels on @3x).
+    static func crisp(_ size: CGFloat, grid: CGFloat) -> CGFloat {
+        let step = grid / 3
+        return max(step, (size / step).rounded() * step)
+    }
+
     static func size(for style: Font.TextStyle) -> CGFloat {
-        switch style {
+        let base: CGFloat = switch style {
         case .largeTitle: 32
         case .title: 28
         case .title2: 24
@@ -220,10 +262,11 @@ enum PixelFont {
         case .caption2: 11
         @unknown default: 16
         }
+        return crisp(base, grid: currentText.grid)
     }
 
     static func uiFont(_ size: CGFloat) -> UIFont? {
-        name.flatMap { UIFont(name: $0, size: size) }
+        name.flatMap { UIFont(name: $0, size: crisp(size, grid: currentText.grid)) }
     }
 }
 
@@ -236,12 +279,15 @@ extension Font {
         return .system(style)
     }
 
-    /// Big money figures: pixel font in the pixel skin, rounded system otherwise.
+    /// Big money figures: the chosen pixel number font (or the text font) in the pixel skin.
     static func money(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
-        if AppSettings.shared.isPixelSkin, let name = PixelFont.name {
-            return .custom(name, size: (size / 4).rounded() * 4, relativeTo: .largeTitle)
-        }
         if AppSettings.shared.isPixelSkin {
+            if let info = PixelFont.currentMoney, let name = PixelFont.postScriptName(info) {
+                return .custom(name, size: PixelFont.crisp(size * info.moneyScale, grid: info.grid), relativeTo: .largeTitle)
+            }
+            if let name = PixelFont.name {
+                return .custom(name, size: PixelFont.crisp(size, grid: PixelFont.currentText.grid), relativeTo: .largeTitle)
+            }
             return .system(size: size, weight: .heavy, design: .monospaced)
         }
         return .system(size: size, weight: weight, design: .rounded).monospacedDigit()

@@ -99,6 +99,16 @@ final class AppSettings {
 
     var isPixelSkin: Bool { skinRaw == "pixel" }
 
+    /// Text font for the pixel skin: "ark", "fusion8" or "unifont".
+    var pixelFontRaw: String {
+        didSet { defaults.set(pixelFontRaw, forKey: Keys.pixelFont) }
+    }
+
+    /// Font for big money figures in the pixel skin: "body", "pressStart" or "silkscreen".
+    var moneyFontRaw: String {
+        didSet { defaults.set(moneyFontRaw, forKey: Keys.moneyFont) }
+    }
+
     /// Use Apple Intelligence when the device supports it.
     var aiEnabled: Bool {
         didSet { defaults.set(aiEnabled, forKey: Keys.ai) }
@@ -133,6 +143,8 @@ final class AppSettings {
         budgetPaceAlerts = defaults.object(forKey: Keys.paceAlerts) as? Bool ?? true
         recordLocation = defaults.bool(forKey: Keys.recordLocation)
         skinRaw = defaults.string(forKey: Keys.skin) ?? "liquid"
+        pixelFontRaw = defaults.string(forKey: Keys.pixelFont) ?? "ark"
+        moneyFontRaw = defaults.string(forKey: Keys.moneyFont) ?? "body"
     }
 
     /// Re-reads values another process (the app vs. the widget) may have changed.
@@ -195,6 +207,8 @@ final class AppSettings {
         static let paceAlerts = "budgetPaceAlerts"
         static let recordLocation = "recordLocation"
         static let skin = "skin"
+        static let pixelFont = "pixelFont"
+        static let moneyFont = "moneyFont"
     }
 }
 
