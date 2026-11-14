@@ -41,6 +41,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}" \
             build 2>&1 | tee build.log | grep -E "error:|warning: .*deprecated|BUILD (SUCCEEDED|FAILED)" || true
           test -f build/Build/Products/Release-iphoneos/MoonMoney.app/Info.plist
 
@@ -54,6 +55,12 @@ jobs:
           cp -R build/Build/Products/Release-iphoneos/MoonMoney.app Payload/
           zip -qry MoonMoney-unsigned.ipa Payload
           ls -lh MoonMoney-unsigned.ipa
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" Payload/MoonMoney.app/Info.plist)
+          BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" Payload/MoonMoney.app/Info.plist)
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "BUILD=$BUILD" >> "$GITHUB_ENV"
+          cp MoonMoney-unsigned.ipa "MoonMoney-${VERSION}.ipa"
+          echo "Version $VERSION ($BUILD)"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -64,9 +71,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="build-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" MoonMoney-unsigned.ipa \
+          # One release per marketing version (e.g. v1.0), refreshed with each new build.
+          TAG="v${VERSION}"
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" "MoonMoney-${VERSION}.ipa" \
             --target "$GITHUB_SHA" \
-            --prerelease \
-            --title "MoonMoney 未签名 IPA #${GITHUB_RUN_NUMBER}" \
-            --notes "未签名构建（commit ${GITHUB_SHA::7}）。需用 AltStore / SideStore / 爱思助手 / TrollStore 等工具自签后安装，系统要求 iOS 26。"
+            --latest \
+            --title "MoonMoney ${VERSION}" \
+            --notes "MoonMoney ${VERSION}（构建 ${BUILD}，commit ${GITHUB_SHA::7}）。
+
+          未签名 IPA，需用 AltStore / SideStore / 爱思助手 / TrollStore 等工具自签后安装，系统要求 iOS 26。新构建会直接覆盖安装旧版本，数据保留。"

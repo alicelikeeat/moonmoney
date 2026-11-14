@@ -50,7 +50,7 @@
 
 ### 未签名 IPA
 
-每次推送都会由 GitHub Actions 自动编译并发布到 Releases，用 AltStore / SideStore / 爱思助手 / TrollStore 自签安装（iOS 26+）。
+当前版本 **1.0**，最新安装包固定在 Releases 的 `v1.0`（`MoonMoney-1.0.ipa`）。每次推送都会由 GitHub Actions 自动编译、递增构建号并更新这个发布，用 AltStore / SideStore / 爱思助手 / TrollStore 自签安装（iOS 26+）。
 
 ### 开启 iCloud 同步（可选，需要付费开发者账号）
 
