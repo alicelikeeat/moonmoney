@@ -53,7 +53,10 @@ jobs:
         run: |
           mkdir -p Payload
           cp -R build/Build/Products/Release-iphoneos/MoonMoney.app Payload/
-          zip -qry MoonMoney-unsigned.ipa Payload
+          # Info.plist first so signing tools find the app even in a partial download.
+          zip -qX MoonMoney-unsigned.ipa Payload/ Payload/MoonMoney.app/ Payload/MoonMoney.app/Info.plist
+          zip -qrX MoonMoney-unsigned.ipa Payload -x Payload/MoonMoney.app/Info.plist
+          unzip -tq MoonMoney-unsigned.ipa
           ls -lh MoonMoney-unsigned.ipa
           VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" Payload/MoonMoney.app/Info.plist)
           BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" Payload/MoonMoney.app/Info.plist)
@@ -62,7 +65,9 @@ jobs:
           cp MoonMoney-unsigned.ipa "MoonMoney-${VERSION}.ipa"
           # Lite build without the widget extension: easier to sign with a free Apple ID.
           rm -rf Payload/MoonMoney.app/PlugIns
-          zip -qry "MoonMoney-${VERSION}-lite.ipa" Payload
+          zip -qX "MoonMoney-${VERSION}-lite.ipa" Payload/ Payload/MoonMoney.app/ Payload/MoonMoney.app/Info.plist
+          zip -qrX "MoonMoney-${VERSION}-lite.ipa" Payload -x Payload/MoonMoney.app/Info.plist
+          unzip -tq "MoonMoney-${VERSION}-lite.ipa"
           echo "Version $VERSION ($BUILD)"
 
       - uses: actions/upload-artifact@v4
@@ -76,12 +81,12 @@ jobs:
         run: |
           # One release per marketing version (e.g. v1.0), refreshed with each new build.
           TAG="v${VERSION}"
-          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
-          gh release create "$TAG" "MoonMoney-${VERSION}.ipa" "MoonMoney-${VERSION}-lite.ipa" \
-            --target "$GITHUB_SHA" \
-            --latest \
-            --title "MoonMoney ${VERSION}" \
-            --notes "MoonMoney ${VERSION}（构建 ${BUILD}，commit ${GITHUB_SHA::7}）。
+          # Never delete the release: replacing assets in place keeps download links alive.
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --latest --title "MoonMoney ${VERSION}" --notes "MoonMoney ${VERSION}"
+          fi
+          gh release upload "$TAG" "MoonMoney-${VERSION}.ipa" "MoonMoney-${VERSION}-lite.ipa" --clobber
+          gh release edit "$TAG" --latest --title "MoonMoney ${VERSION}" --notes "MoonMoney ${VERSION}（构建 ${BUILD}，commit ${GITHUB_SHA::7}）。
 
           未签名 IPA，需用 AltStore / SideStore / 爱思助手 / TrollStore 等工具自签后安装，系统要求 iOS 26。
 
