@@ -19,7 +19,7 @@ struct SettingsView: View {
                     profileCard
                         .plainListRow(top: 8, bottom: 8)
 
-                    Section("智能") {
+                    Section {
                         Button {
                             Router.shared.showAIEntry = true
                         } label: {
@@ -38,9 +38,11 @@ struct SettingsView: View {
                             SettingsLabel("使用 Apple 智能", symbol: "apple.intelligence", color: .indigo,
                                           subtitle: "状态：\(SmartParser.aiStatusText)")
                         }
-                    }
+                    } header: {
+ SectionTitle("智能")
+ }
 
-                    Section("理财") {
+                    Section {
                         NavigationLink { SavingsGoalsView() } label: {
                             SettingsLabel("存钱目标", symbol: "star.circle.fill", color: .orange)
                         }
@@ -50,9 +52,11 @@ struct SettingsView: View {
                         NavigationLink { ReimbursementsView() } label: {
                             SettingsLabel("报销", symbol: "doc.text.fill", color: .cyan)
                         }
-                    }
+                    } header: {
+ SectionTitle("理财")
+ }
 
-                    Section("个性化") {
+                    Section {
                         NavigationLink { SkinPickerView() } label: {
                             SettingsLabel("界面皮肤", symbol: "square.grid.3x3.fill", color: .orange,
                                           subtitle: settings.skin.title)
@@ -69,9 +73,11 @@ struct SettingsView: View {
                         NavigationLink { ReminderSettingsView() } label: {
                             SettingsLabel("提醒", symbol: "bell.badge.fill", color: .red)
                         }
-                    }
+                    } header: {
+ SectionTitle("个性化")
+ }
 
-                    Section("记账") {
+                    Section {
                         NavigationLink { BudgetView() } label: {
                             SettingsLabel("预算", symbol: "target", color: .green)
                         }
@@ -90,9 +96,11 @@ struct SettingsView: View {
                         NavigationLink { LedgerManagerView() } label: {
                             SettingsLabel("账本管理", symbol: "books.vertical.fill", color: .indigo)
                         }
-                    }
+                    } header: {
+ SectionTitle("记账")
+ }
 
-                    Section("偏好") {
+                    Section {
                         Picker(selection: $settings.baseCurrency) {
                             ForEach(Currencies.common, id: \.self) { code in
                                 Text("\(code) · \(Currencies.name(code))").tag(code)
@@ -122,7 +130,9 @@ struct SettingsView: View {
                         Toggle(isOn: $settings.hapticsEnabled) {
                             SettingsLabel("触感反馈", symbol: "iphone.radiowaves.left.and.right", color: .pink)
                         }
-                    }
+                    } header: {
+ SectionTitle("偏好")
+ }
 
                     Section {
                         Toggle(isOn: Binding(
@@ -154,7 +164,7 @@ struct SettingsView: View {
                         }
                         LabeledContent {
                             Text(AppGroup.storeMode.rawValue)
-                                .font(.footnote)
+                                .font(Font.skin(.footnote))
                                 .foregroundStyle(AppGroup.storeMode == .memory ? Color.expense : Color.secondary)
                         } label: {
                             SettingsLabel("数据存储", symbol: "internaldrive.fill", color: .gray)
@@ -170,6 +180,9 @@ struct SettingsView: View {
 
                     Section {
                         LabeledContent("版本", value: appVersion)
+                        NavigationLink { LicensesView() } label: {
+                            SettingsLabel("开源许可", symbol: "doc.plaintext", color: .gray)
+                        }
                         Link(destination: URL(string: "https://support.apple.com/zh-cn/guide/shortcuts/welcome/ios")!) {
                             SettingsLabel("Siri 与快捷指令：说“用 MoonMoney 记一笔”", symbol: "waveform", color: .indigo)
                         }
@@ -206,14 +219,14 @@ struct SettingsView: View {
                 .background(LinearGradient(colors: [.indigo, .purple], startPoint: .topLeading, endPoint: .bottomTrailing),
                             in: .rect(cornerRadius: 18))
             VStack(alignment: .leading, spacing: 6) {
-                Text("MoonMoney").font(.title3.bold())
+                Text("MoonMoney").font(Font.skin(.title3).bold())
                 HStack(spacing: 14) {
                     stat("\(days)", "记账天数")
                     stat("\(allRecords.count)", "总笔数")
                     stat("\(ledgers.count)", "账本")
                 }
                 if let first {
-                    Text("始于 \(first.zh("yMMMd"))").font(.caption2).foregroundStyle(.secondary)
+                    Text("始于 \(first.zh("yMMMd"))").font(Font.skin(.caption2)).foregroundStyle(.secondary)
                 }
             }
             Spacer()
@@ -223,8 +236,8 @@ struct SettingsView: View {
 
     private func stat(_ value: String, _ title: String) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(value).font(.headline.monospacedDigit())
-            Text(title).font(.caption2).foregroundStyle(.secondary)
+            Text(value).font(Font.skin(.headline).monospacedDigit())
+            Text(title).font(Font.skin(.caption2)).foregroundStyle(.secondary)
         }
     }
 
@@ -262,7 +275,7 @@ struct SettingsLabel: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(title).foregroundStyle(Color.primary)
                 if let subtitle {
-                    Text(subtitle).font(.caption2).foregroundStyle(Color.secondary)
+                    Text(subtitle).font(Font.skin(.caption2)).foregroundStyle(Color.secondary)
                 }
             }
         } icon: {
@@ -272,5 +285,25 @@ struct SettingsLabel: View {
                 .frame(width: 28, height: 28)
                 .background(color.gradient, in: .rect(cornerRadius: 7))
         }
+    }
+}
+
+/// Licenses for bundled third-party assets (the pixel font is SIL OFL 1.1).
+struct LicensesView: View {
+    private var text: String {
+        guard let url = Bundle.main.url(forResource: "OFL", withExtension: "txt"),
+              let text = try? String(contentsOf: url, encoding: .utf8) else { return "未找到许可文件。" }
+        return text
+    }
+
+    var body: some View {
+        ScrollView {
+            Text(text)
+                .font(.system(.caption, design: .monospaced))
+                .textSelection(.enabled)
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .navigationTitle("开源许可")
     }
 }

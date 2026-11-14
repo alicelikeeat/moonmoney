@@ -21,9 +21,9 @@ struct SavingsGoalsView: View {
         List {
             Group {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("已存 / 目标").font(.subheadline).foregroundStyle(.secondary)
+                    Text("已存 / 目标").font(Font.skin(.subheadline)).foregroundStyle(.secondary)
                     Text("\(Money.format(saved)) / \(Money.format(target))")
-                        .font(.title2.bold().monospacedDigit())
+                        .font(Font.skin(.title2).bold().monospacedDigit())
                     ProgressCapsule(value: Double(saved) / Double(max(target, 1)), tint: .orange, height: 10)
                 }
                 .glassCard(cornerRadius: 28, tint: Color.orange.opacity(0.08))
@@ -134,20 +134,20 @@ private struct GoalRow: View {
             .frame(width: 48, height: 48)
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(goal.name).font(.headline)
+                    Text(goal.name).font(Font.skin(.headline))
                     if ratio >= 1 { Image(systemName: "checkmark.seal.fill").foregroundStyle(.green) }
                 }
                 Text("\(Money.format(progress)) / \(Money.format(goal.targetCents)) · \(InsightEngine.percent(ratio))")
-                    .font(.caption.monospacedDigit())
+                    .font(Font.skin(.caption).monospacedDigit())
                     .foregroundStyle(.secondary)
                 if let deadline = goal.deadline, ratio < 1 {
                     let months = max(1, Calendar.current.dateComponents([.month], from: .now, to: deadline).month ?? 1)
                     Text("距 \(deadline.zh("yMMMd")) 每月需存 \(Money.format(max(0, goal.targetCents - progress) / months))")
-                        .font(.caption2)
+                        .font(Font.skin(.caption2))
                         .foregroundStyle(.orange)
                 }
                 if goal.accountID != nil {
-                    Label("跟随账户余额", systemImage: "link").font(.caption2).foregroundStyle(.secondary)
+                    Label("跟随账户余额", systemImage: "link").font(Font.skin(.caption2)).foregroundStyle(.secondary)
                 }
             }
         }
@@ -191,7 +191,7 @@ private struct GoalEditor: View {
                 Group {
                     HStack(spacing: 14) {
                         CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true)
-                        TextField("目标名称，如「日本旅行」", text: $name).font(.title3.weight(.semibold))
+                        TextField("目标名称，如「日本旅行」", text: $name).font(Font.skin(.title3).weight(.semibold))
                     }
                     Section {
                         CentsField(title: "目标金额", cents: $target)
@@ -207,8 +207,12 @@ private struct GoalEditor: View {
                             DatePicker("截止于", selection: $deadline, displayedComponents: .date)
                         }
                     }
-                    Section("颜色") { ColorSwatchPicker(hex: $colorHex) }
-                    Section("图标") { SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex)).padding(.vertical, 6) }
+                    Section { ColorSwatchPicker(hex: $colorHex) } header: {
+ SectionTitle("颜色")
+ }
+                    Section { SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex)).padding(.vertical, 6) } header: {
+ SectionTitle("图标")
+ }
                 }
                 .listRowBackground(GlassRowBackground())
             }
@@ -264,13 +268,13 @@ struct DebtsView: View {
             Group {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("别人欠我").font(.caption).foregroundStyle(.secondary)
-                        Text(Money.format(receivable)).font(.title3.bold().monospacedDigit()).foregroundStyle(Color.income)
+                        Text("别人欠我").font(Font.skin(.caption)).foregroundStyle(.secondary)
+                        Text(Money.format(receivable)).font(Font.skin(.title3).bold().monospacedDigit()).foregroundStyle(Color.income)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("我欠别人").font(.caption).foregroundStyle(.secondary)
-                        Text(Money.format(payable)).font(.title3.bold().monospacedDigit()).foregroundStyle(Color.expense)
+                        Text("我欠别人").font(Font.skin(.caption)).foregroundStyle(.secondary)
+                        Text(Money.format(payable)).font(Font.skin(.title3).bold().monospacedDigit()).foregroundStyle(Color.expense)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -361,15 +365,15 @@ private struct DebtRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Text(String(debt.person.prefix(1)))
-                .font(.headline)
+                .font(Font.skin(.headline))
                 .foregroundStyle(.white)
                 .frame(width: 40, height: 40)
                 .background((debt.isLent ? Color.income : Color.expense).gradient, in: .circle)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(debt.person).font(.body.weight(.medium))
+                    Text(debt.person).font(Font.skin(.body).weight(.medium))
                     Text(debt.isLent ? "借出" : "借入")
-                        .font(.caption2.weight(.semibold))
+                        .font(Font.skin(.caption2).weight(.semibold))
                         .padding(.horizontal, 6)
                         .padding(.vertical, 1)
                         .background((debt.isLent ? Color.income : Color.expense).opacity(0.15), in: .capsule)
@@ -385,16 +389,16 @@ private struct DebtRow: View {
                         Text(debt.date.zh("yMMMd"))
                     }
                 }
-                .font(.caption)
+                .font(Font.skin(.caption))
                 .foregroundStyle(.secondary)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
                 Text(Money.format(debt.remainingCents, code: debt.currencyCode))
-                    .font(.body.weight(.semibold).monospacedDigit())
+                    .font(Font.skin(.body).weight(.semibold).monospacedDigit())
                 if debt.repaidCents > 0 && !debt.isSettled {
                     Text("共 \(Money.format(debt.amountCents, code: debt.currencyCode))")
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(Font.skin(.caption2)).foregroundStyle(.secondary)
                 }
             }
         }
@@ -497,14 +501,14 @@ struct ReimbursementsView: View {
         List {
             Group {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("待报销").font(.subheadline).foregroundStyle(.secondary)
+                    Text("待报销").font(Font.skin(.subheadline)).foregroundStyle(.secondary)
                     Text(Money.format(pendingTotal)).font(.money(32))
-                    Text("\(pending.count) 笔 · 记账时打开「报销」即可加入").font(.caption).foregroundStyle(.secondary)
+                    Text("\(pending.count) 笔 · 记账时打开「报销」即可加入").font(Font.skin(.caption)).foregroundStyle(.secondary)
                 }
                 .glassCard(cornerRadius: 28, tint: Color.cyan.opacity(0.08))
                 .plainListRow(top: 8, bottom: 8)
 
-                Section("待报销") {
+                Section {
                     if pending.isEmpty { Text("没有待报销的账单").foregroundStyle(.secondary) }
                     ForEach(pending) { record in
                         NavigationLink(value: record) { RecordRow(record: record, showDate: true) }
@@ -519,9 +523,11 @@ struct ReimbursementsView: View {
                                 .tint(.green)
                             }
                     }
-                }
+                } header: {
+ SectionTitle("待报销")
+ }
                 if showDone {
-                    Section("已报销") {
+                    Section {
                         ForEach(done) { record in
                             NavigationLink(value: record) { RecordRow(record: record, showDate: true) }
                                 .swipeActions(edge: .leading) {
@@ -533,7 +539,9 @@ struct ReimbursementsView: View {
                                     }
                                 }
                         }
-                    }
+                    } header: {
+ SectionTitle("已报销")
+ }
                 }
             }
             .listRowBackground(GlassRowBackground())

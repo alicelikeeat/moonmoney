@@ -116,7 +116,7 @@ private struct PixelButtonBody: View {
         let palette = PixelPalette(scheme: scheme)
         let pressed = configuration.isPressed
         configuration.label
-            .font(.subheadline.weight(.bold))
+            .font(Font.skin(.subheadline).weight(.bold))
             .padding(.horizontal, square ? 0 : 12)
             .frame(minWidth: minHeight, minHeight: minHeight)
             .foregroundStyle(prominent ? AnyShapeStyle(.white) : AnyShapeStyle(Color.primary))
@@ -186,16 +186,18 @@ extension View {
 
 // MARK: - Fonts
 
-/// Makes sure the bundled MoonPixel font is registered and remembers its real name.
+/// Registers the bundled pixel font (a subset of GNU Unifont, SIL OFL 1.1)
+/// and remembers the name iOS knows it by.
 enum PixelFont {
+    static let family = "MoonPixel CJK"
+
     /// PostScript name of the loaded font, or nil if it could not be loaded.
     static let name: String? = {
-        if let existing = UIFont.fontNames(forFamilyName: "MoonPixel").first { return existing }
-        guard let url = Bundle.main.url(forResource: "MoonPixel", withExtension: "ttf") else { return nil }
+        if let existing = UIFont.fontNames(forFamilyName: family).first { return existing }
+        guard let url = Bundle.main.url(forResource: "MoonPixelCJK", withExtension: "otf") else { return nil }
         var error: Unmanaged<CFError>?
         CTFontManagerRegisterFontsForURL(url as CFURL, .process, &error)
-        if let existing = UIFont.fontNames(forFamilyName: "MoonPixel").first { return existing }
-        // Fall back to reading the name straight from the file.
+        if let existing = UIFont.fontNames(forFamilyName: family).first { return existing }
         guard let descriptors = CTFontManagerCreateFontDescriptorsFromURL(url as CFURL) as? [CTFontDescriptor],
               let first = descriptors.first,
               let ps = CTFontDescriptorCopyAttribute(first, kCTFontNameAttribute) as? String else { return nil }
@@ -203,18 +205,65 @@ enum PixelFont {
     }()
 
     static var isLoaded: Bool { name != nil }
+
+    /// The glyphs are drawn on a 16-pixel grid, so sizes near multiples of 4 stay crisp.
+    static func size(for style: Font.TextStyle) -> CGFloat {
+        switch style {
+        case .largeTitle: 32
+        case .title: 28
+        case .title2: 24
+        case .title3: 20
+        case .headline, .body, .callout: 16
+        case .subheadline: 15
+        case .footnote: 13
+        case .caption: 12
+        case .caption2: 11
+        @unknown default: 16
+        }
+    }
+
+    static func uiFont(_ size: CGFloat) -> UIFont? {
+        name.flatMap { UIFont(name: $0, size: size) }
+    }
 }
 
 extension Font {
-    /// Big money figures: the MoonPixel font in the pixel skin, rounded system otherwise.
+    /// A text style that turns into the pixel font in the pixel skin (keeps Dynamic Type scaling).
+    static func skin(_ style: Font.TextStyle) -> Font {
+        if AppSettings.shared.isPixelSkin, let name = PixelFont.name {
+            return .custom(name, size: PixelFont.size(for: style), relativeTo: style)
+        }
+        return .system(style)
+    }
+
+    /// Big money figures: pixel font in the pixel skin, rounded system otherwise.
     static func money(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
         if AppSettings.shared.isPixelSkin, let name = PixelFont.name {
-            return .custom(name, fixedSize: size * 0.92)
+            return .custom(name, size: (size / 4).rounded() * 4, relativeTo: .largeTitle)
         }
         if AppSettings.shared.isPixelSkin {
             return .system(size: size, weight: .heavy, design: .monospaced)
         }
         return .system(size: size, weight: weight, design: .rounded).monospacedDigit()
+    }
+}
+
+/// Applies the pixel font to UIKit-drawn chrome: navigation titles, tab bar, segmented controls.
+enum PixelChrome {
+    @MainActor
+    static func apply(pixel: Bool) {
+        let title = pixel ? PixelFont.uiFont(18) : nil
+        let large = pixel ? PixelFont.uiFont(32) : nil
+        let small = pixel ? PixelFont.uiFont(12) : nil
+        let segment = pixel ? PixelFont.uiFont(14) : nil
+
+        UINavigationBar.appearance().titleTextAttributes = title.map { [.font: $0] }
+        UINavigationBar.appearance().largeTitleTextAttributes = large.map { [.font: $0] }
+        UITabBarItem.appearance().setTitleTextAttributes(small.map { [.font: $0] }, for: .normal)
+        UITabBarItem.appearance().setTitleTextAttributes(small.map { [.font: $0] }, for: .selected)
+        UISegmentedControl.appearance().setTitleTextAttributes(segment.map { [.font: $0] }, for: .normal)
+        UISegmentedControl.appearance().setTitleTextAttributes(segment.map { [.font: $0] }, for: .selected)
+        UIBarButtonItem.appearance().setTitleTextAttributes(segment.map { [.font: $0] }, for: .normal)
     }
 }
 
@@ -338,5 +387,20 @@ struct SeededGenerator: RandomNumberGenerator {
         z = (z ^ (z >> 30)) &* 0xBF58476D1CE4E5B9
         z = (z ^ (z >> 27)) &* 0x94D049BB133111EB
         return z ^ (z >> 31)
+    }
+}
+
+/// Section header text that follows the skin (List styles headers itself).
+struct SectionTitle: View {
+    let title: String
+
+    init(_ title: String) { self.title = title }
+
+    var body: some View {
+        if AppSettings.shared.isPixelSkin {
+            Text(title).font(Font.skin(.footnote))
+        } else {
+            Text(title)
+        }
     }
 }

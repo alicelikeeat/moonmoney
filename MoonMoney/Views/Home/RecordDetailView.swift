@@ -16,12 +16,12 @@ struct RecordDetailView: View {
                 VStack(spacing: 12) {
                     CategoryIcon(symbol: record.displaySymbol, color: record.displayColor, size: 64, filled: true, image: record.displayImage)
                     Text(record.displayTitle)
-                        .font(.headline)
+                        .font(Font.skin(.headline))
                     AmountText(cents: record.amountCents, kind: record.kind, code: record.currencyCode,
                                font: .money(36))
                     if record.currencyCode != AppSettings.shared.baseCurrency {
                         Text("约 \(Money.format(record.baseAmountCents))")
-                            .font(.footnote)
+                            .font(Font.skin(.footnote))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -72,14 +72,16 @@ struct RecordDetailView: View {
                 }
 
                 if let data = record.photo, let image = UIImage(data: data) {
-                    Section("票据") {
+                    Section {
                         Image(uiImage: image)
                             .resizable()
                             .scaledToFit()
                             .clipShape(.rect(cornerRadius: 16))
                             .onTapGesture { showPhoto = true }
                             .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-                    }
+                    } header: {
+ SectionTitle("票据")
+ }
                 }
 
                 Section {
@@ -89,7 +91,7 @@ struct RecordDetailView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .font(.footnote)
+                .font(Font.skin(.footnote))
             }
             .listRowBackground(GlassRowBackground())
         }

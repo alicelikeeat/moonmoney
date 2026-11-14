@@ -274,7 +274,7 @@ struct MonthSummaryCard: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text(Periods.title(interval, kind: .month) + "支出")
-                    .font(.subheadline)
+                    .font(Font.skin(.subheadline))
                     .foregroundStyle(.secondary)
                 Spacer()
                 HStack(spacing: 8) {
@@ -336,7 +336,7 @@ struct MonthSummaryCard: View {
             HStack(alignment: .firstTextBaseline) {
                 Label(remaining >= 0 ? "预算剩余 \(Money.format(remaining))" : "已超支 \(Money.format(-remaining))",
                       systemImage: "target")
-                    .font(.footnote.weight(.semibold).monospacedDigit())
+                    .font(Font.skin(.footnote).weight(.semibold).monospacedDigit())
                     .foregroundStyle(remaining >= 0 ? Color.primary : Color.expense)
                     .lineLimit(1)
                     .layoutPriority(1)
@@ -350,16 +350,16 @@ struct MonthSummaryCard: View {
                     Text("剩 \(days) 天 · 每天可用 \(Money.format(remaining / days))")
                 }
             }
-            .font(.caption2.monospacedDigit())
+            .font(Font.skin(.caption2).monospacedDigit())
             .foregroundStyle(.secondary)
         }
     }
 
     private func metric(_ title: String, _ value: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text(title).font(Font.skin(.caption)).foregroundStyle(.secondary)
             Text(value)
-                .font(.subheadline.weight(.semibold).monospacedDigit())
+                .font(Font.skin(.subheadline).weight(.semibold).monospacedDigit())
                 .foregroundStyle(color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
@@ -395,7 +395,7 @@ struct DayHeader: View {
                     .foregroundStyle(Color.income)
             }
         }
-        .font(.footnote.weight(.medium).monospacedDigit())
+        .font(Font.skin(.footnote).weight(.medium).monospacedDigit())
         .textCase(nil)
     }
 }
@@ -410,27 +410,27 @@ struct RecordRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(record.displayTitle)
-                        .font(.body.weight(.medium))
+                        .font(Font.skin(.body).weight(.medium))
                         .lineLimit(1)
                     if record.isRecurringInstance {
-                        Image(systemName: "repeat").font(.caption2).foregroundStyle(.secondary)
+                        Image(systemName: "repeat").font(Font.skin(.caption2)).foregroundStyle(.secondary)
                     }
                     if record.photo != nil {
-                        Image(systemName: "photo").font(.caption2).foregroundStyle(.secondary)
+                        Image(systemName: "photo").font(Font.skin(.caption2)).foregroundStyle(.secondary)
                     }
                     if record.excludedFromStats {
-                        Image(systemName: "eye.slash").font(.caption2).foregroundStyle(.secondary)
+                        Image(systemName: "eye.slash").font(Font.skin(.caption2)).foregroundStyle(.secondary)
                     }
                 }
                 Text(subtitle)
-                    .font(.caption)
+                    .font(Font.skin(.caption))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 if !record.sortedTags.isEmpty {
                     HStack(spacing: 4) {
                         ForEach(record.sortedTags.prefix(3)) { tag in
                             Text("#\(tag.name)")
-                                .font(.caption2.weight(.medium))
+                                .font(Font.skin(.caption2).weight(.medium))
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 1)
                                 .background(tag.color.opacity(0.15), in: .capsule)
@@ -444,7 +444,7 @@ struct RecordRow: View {
                 AmountText(cents: record.amountCents, kind: record.kind, code: record.currencyCode)
                 if record.currencyCode != AppSettings.shared.baseCurrency {
                     Text("≈ \(Money.format(record.baseAmountCents))")
-                        .font(.caption2.monospacedDigit())
+                        .font(Font.skin(.caption2).monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
             }

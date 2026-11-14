@@ -12,6 +12,8 @@ struct SkinPickerView: View {
                 ForEach(Skin.allCases) { skin in
                     Button {
                         guard settings.skin != skin else { return }
+                        // Set UIKit fonts first so the rebuilt navigation and tab bars pick them up.
+                        PixelChrome.apply(pixel: skin == .pixel)
                         withAnimation(.smooth) { settings.skin = skin }
                         Haptics.success()
                     } label: {
@@ -30,18 +32,18 @@ struct SkinPickerView: View {
                     }
                     .buttonStyle(.inCard(prominent: true))
                     if let iconMessage {
-                        Text(iconMessage).font(.footnote).foregroundStyle(.secondary)
+                        Text(iconMessage).font(Font.skin(.footnote)).foregroundStyle(.secondary)
                     }
                 }
 
                 Label(PixelFont.isLoaded ? "像素字体已加载：\(PixelFont.name ?? "")" : "像素字体未加载，已使用等宽字体代替",
                       systemImage: PixelFont.isLoaded ? "checkmark.seal" : "exclamationmark.triangle")
-                    .font(.caption)
+                    .font(Font.skin(.caption))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text("像素皮肤会把卡片、按钮、进度条、分类图标和背景换成复古像素风格，金额使用 MoonMoney 原创像素字体。导航栏和标签栏保持系统样式。")
-                    .font(.footnote)
+                Text("像素皮肤会把全部文字（中文、数字、英文，包括导航标题和标签栏）换成像素字体，并把卡片、按钮、进度条、分类图标和背景换成复古像素风格。像素字体基于 GNU Unifont（SIL OFL 1.1 授权）。")
+                    .font(Font.skin(.footnote))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -73,10 +75,10 @@ private struct SkinPreviewCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(skin.title).font(.headline)
+                Text(skin.title).font(Font.skin(.headline))
                 Spacer()
                 Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
+                    .font(Font.skin(.title3))
                     .foregroundStyle(selected ? Color.accentColor : Color.secondary)
             }
             ZStack {
@@ -105,7 +107,7 @@ private struct SkinPreviewCard: View {
     @ViewBuilder
     private var miniCard: some View {
         let content = VStack(alignment: .leading, spacing: 6) {
-            Text("十一月支出").font(.caption).foregroundStyle(.secondary)
+            Text("十一月支出").font(Font.skin(.caption)).foregroundStyle(.secondary)
             Text("¥1,654.37")
                 .font(skin == .pixel ? .custom(PixelFont.name ?? "Menlo", fixedSize: 30) : .system(size: 30, weight: .bold, design: .rounded))
             HStack(spacing: 2) {

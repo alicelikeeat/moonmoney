@@ -39,16 +39,16 @@ private struct BudgetAlertsContent: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label(summaryTitle(worst, count: statuses.filter { $0.level >= .warning }.count),
                           systemImage: worst.symbol)
-                        .font(.headline)
+                        .font(Font.skin(.headline))
                         .foregroundStyle(worst.tint)
                     Text("剩余 \(Periods.remainingDays(in: interval)) 天 · 共 \(statuses.count) 个预算")
-                        .font(.subheadline)
+                        .font(Font.skin(.subheadline))
                         .foregroundStyle(.secondary)
                 }
                 .glassCard(cornerRadius: 28, tint: worst.tint.opacity(0.12))
                 .plainListRow(top: 8, bottom: 8)
 
-                Section("状态") {
+                Section {
                     if statuses.isEmpty {
                         NavigationLink { BudgetView() } label: {
                             Label("还没有预算，去设置", systemImage: "target")
@@ -60,7 +60,9 @@ private struct BudgetAlertsContent: View {
                             try? context.save()
                         }
                     }
-                }
+                } header: {
+ SectionTitle("状态")
+ }
 
                 Section {
                     ForEach(options, id: \.self) { value in
@@ -114,9 +116,9 @@ struct BudgetStatusRow: View {
             HStack(spacing: 12) {
                 CategoryIcon(symbol: status.symbol, color: status.color, size: 36, image: status.image)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(status.name).font(.subheadline.weight(.semibold))
+                    Text(status.name).font(Font.skin(.subheadline).weight(.semibold))
                     Text("\(Money.format(status.spent)) / \(Money.format(status.limit))")
-                        .font(.caption.monospacedDigit())
+                        .font(Font.skin(.caption).monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -131,7 +133,7 @@ struct BudgetStatusRow: View {
             ProgressCapsule(value: status.ratio, tint: status.level.tint, height: 6)
             if let forecast = status.forecast {
                 Label(forecast, systemImage: "chart.line.uptrend.xyaxis")
-                    .font(.caption)
+                    .font(Font.skin(.caption))
                     .foregroundStyle(status.level.tint)
             }
         }
@@ -156,9 +158,9 @@ struct BudgetWarningStrip: View {
                                 .foregroundStyle(status.level.tint)
                                 .frame(width: 22)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(status.headline).font(.subheadline.weight(.semibold))
+                                Text(status.headline).font(Font.skin(.subheadline).weight(.semibold))
                                 if let forecast = status.forecast {
-                                    Text(forecast).font(.caption).foregroundStyle(.secondary)
+                                    Text(forecast).font(Font.skin(.caption)).foregroundStyle(.secondary)
                                 }
                             }
                             Spacer(minLength: 0)
@@ -181,12 +183,12 @@ struct BudgetBannerView: View {
         Button(action: onTap) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: banner.level.symbol)
-                    .font(.title3)
+                    .font(Font.skin(.title3))
                     .foregroundStyle(banner.level.tint)
                     .symbolEffect(.bounce, value: banner.id)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(banner.title).font(.subheadline.weight(.semibold))
-                    Text(banner.message).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                    Text(banner.title).font(Font.skin(.subheadline).weight(.semibold))
+                    Text(banner.message).font(Font.skin(.caption)).foregroundStyle(.secondary).lineLimit(2)
                 }
                 Spacer(minLength: 0)
             }

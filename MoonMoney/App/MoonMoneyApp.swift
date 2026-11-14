@@ -13,14 +13,19 @@ struct MoonMoneyApp: App {
     init() {
         DataStore.bootstrap()
         DemoMode.applyIfRequested()
+        PixelChrome.apply(pixel: AppSettings.shared.isPixelSkin)
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
     }
 
     var body: some Scene {
         WindowGroup {
             RootView()
-                // The pixel skin turns every system font monospaced for a retro feel.
-                .fontDesign(settings.isPixelSkin ? .monospaced : nil)
+                // Default font for every Text without an explicit one (pixel font in the pixel skin).
+                .font(Font.skin(.body))
+                // UIKit chrome reads its fonts at creation, so rebuild the tree when the skin changes.
+                .id(settings.skinRaw)
+                .onAppear { PixelChrome.apply(pixel: settings.isPixelSkin) }
+                .onChange(of: settings.skinRaw) { PixelChrome.apply(pixel: settings.isPixelSkin) }
                 .environment(settings)
                 .environment(router)
                 .environment(lock)
@@ -172,25 +177,25 @@ private struct TodaySpendBar: View {
                     .symbolEffect(.bounce, value: today.count)
                 if placement == .inline {
                     Text(Money.format(spent))
-                        .font(.subheadline.monospacedDigit().weight(.semibold))
+                        .font(Font.skin(.subheadline).monospacedDigit().weight(.semibold))
                         .contentTransition(.numericText())
                 } else {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("今日支出 · \(today.count) 笔")
-                            .font(.caption2)
+                            .font(Font.skin(.caption2))
                             .foregroundStyle(.secondary)
                         Text(Money.format(spent))
-                            .font(.subheadline.monospacedDigit().weight(.semibold))
+                            .font(Font.skin(.subheadline).monospacedDigit().weight(.semibold))
                             .contentTransition(.numericText())
                     }
                 }
                 Spacer(minLength: 4)
                 if placement == .inline {
                     Image(systemName: "plus")
-                        .font(.subheadline.weight(.bold))
+                        .font(Font.skin(.subheadline).weight(.bold))
                 } else {
                     Label("记一笔", systemImage: "plus")
-                        .font(.subheadline.weight(.semibold))
+                        .font(Font.skin(.subheadline).weight(.semibold))
                         .labelStyle(.titleAndIcon)
                         .lineLimit(1)
                         .fixedSize()
@@ -207,7 +212,7 @@ private struct TodaySpendBar: View {
             router.showAIEntry = true
         } label: {
             Image(systemName: "sparkles")
-                .font(.subheadline.weight(.semibold))
+                .font(Font.skin(.subheadline).weight(.semibold))
                 .foregroundStyle(.purple)
                 .frame(width: 36, height: 36)
                 .contentShape(.rect)
@@ -232,7 +237,7 @@ struct LockScreen: View {
                     .foregroundStyle(.tint)
                     .symbolEffect(.pulse)
                 Text("MoonMoney 已锁定")
-                    .font(.title2.bold())
+                    .font(Font.skin(.title2).bold())
                 Button {
                     Task { await lock.unlock() }
                 } label: {

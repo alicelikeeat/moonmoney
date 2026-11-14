@@ -224,10 +224,10 @@ struct ExportSheet: View {
                 .font(.system(size: 46))
                 .foregroundStyle(.tint)
             Text(url.lastPathComponent)
-                .font(.headline)
+                .font(Font.skin(.headline))
                 .multilineTextAlignment(.center)
             Text(url.pathExtension == "json" ? "可在任意设备的 MoonMoney 中「从完整备份恢复」。" : "可用 Numbers、Excel 打开，也可以再次导入。")
-                .font(.footnote)
+                .font(Font.skin(.footnote))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
@@ -250,7 +250,7 @@ struct ExportSheet: View {
 
             if let onContinue {
                 Button("已保存，继续清空数据", role: .destructive, action: onContinue)
-                    .font(.subheadline.weight(.semibold))
+                    .font(Font.skin(.subheadline).weight(.semibold))
                     .padding(.top, 4)
             }
         }

@@ -69,7 +69,7 @@ private struct InCardButtonBody: View {
 
     var body: some View {
         configuration.label
-            .font(.subheadline.weight(.semibold))
+            .font(Font.skin(.subheadline).weight(.semibold))
             .padding(.horizontal, circle ? 0 : 14)
             .frame(minWidth: 34, minHeight: 34)
             .foregroundStyle(prominent ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
@@ -360,7 +360,7 @@ struct GlassChip: View {
 
     var body: some View {
         let label = Label(title, systemImage: symbol)
-            .font(.subheadline.weight(.medium))
+            .font(Font.skin(.subheadline).weight(.medium))
             .lineLimit(1)
             .padding(.horizontal, 12)
             .frame(height: 34)
@@ -380,11 +380,11 @@ struct AmountText: View {
     var cents: Int
     var kind: RecordKind
     var code: String = AppSettings.shared.baseCurrency
-    var font: Font = .body
+    var font: Font? = nil
 
     var body: some View {
         Text(text)
-            .font(font.monospacedDigit())
+            .font((font ?? Font.skin(.body)).monospacedDigit())
             .fontWeight(.semibold)
             .foregroundStyle(kind == .expense ? Color.primary : kind.tint)
             .contentTransition(.numericText())
@@ -510,11 +510,11 @@ struct SymbolGridPicker: View {
                     }
                 }
                 Text("支持照片、GIF 动图和视频（截取前 3 秒做成会动的图标）。选择下方符号或 Emoji 会替换它。")
-                    .font(.caption2)
+                    .font(Font.skin(.caption2))
                     .foregroundStyle(.secondary)
             }
             HStack {
-                Text("Emoji").font(.caption).foregroundStyle(.secondary)
+                Text("Emoji").font(Font.skin(.caption)).foregroundStyle(.secondary)
                 TextField("输入一个表情，如 🍜", text: $emoji)
                     .onChange(of: emoji) { _, value in
                         if let first = value.last, !first.isASCII {
@@ -528,7 +528,7 @@ struct SymbolGridPicker: View {
                 }
             }
             ForEach(SymbolLibrary.groups, id: \.0) { group in
-                Text(group.0).font(.caption).foregroundStyle(.secondary)
+                Text(group.0).font(Font.skin(.caption)).foregroundStyle(.secondary)
                 LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(group.1, id: \.self) { symbol in
                         Button {
@@ -559,7 +559,7 @@ struct ColorSwatchPicker: View {
                     .frame(height: 30)
                     .overlay {
                         if swatch.caseInsensitiveCompare(hex) == .orderedSame {
-                            Image(systemName: "checkmark").font(.caption.bold()).foregroundStyle(.white)
+                            Image(systemName: "checkmark").font(Font.skin(.caption).bold()).foregroundStyle(.white)
                         }
                     }
                     .onTapGesture {
@@ -591,7 +591,7 @@ struct CentsField: View {
             TextField("0.00", text: $text)
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)
-                .font(.body.monospacedDigit())
+                .font(Font.skin(.body).monospacedDigit())
                 .focused($focused)
                 .frame(maxWidth: 160)
         }

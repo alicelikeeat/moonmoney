@@ -53,7 +53,7 @@ struct AccountEditor: View {
                         HStack(spacing: 14) {
                             CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true, image: iconImage)
                             TextField("账户名称", text: $name)
-                                .font(.title3.weight(.semibold))
+                                .font(Font.skin(.title3).weight(.semibold))
                         }
                         Picker("类型", selection: $type) {
                             ForEach(AccountType.allCases) { type in
@@ -88,14 +88,18 @@ struct AccountEditor: View {
                         TextField("备注（如卡号后四位）", text: $note)
                     }
 
-                    Section("颜色") {
+                    Section {
                         ColorSwatchPicker(hex: $colorHex)
-                    }
+                    } header: {
+ SectionTitle("颜色")
+ }
 
-                    Section("图标") {
+                    Section {
                         SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex), image: $iconImage)
                             .padding(.vertical, 6)
-                    }
+                    } header: {
+ SectionTitle("图标")
+ }
 
                     if account != nil && allowsDelete {
                         Section {

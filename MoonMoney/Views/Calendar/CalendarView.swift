@@ -70,9 +70,9 @@ private struct CalendarContent: View {
                         Spacer()
                         VStack(spacing: 2) {
                             Text("支出 \(Money.format(monthSummary.expense))")
-                                .font(.subheadline.weight(.semibold).monospacedDigit())
+                                .font(Font.skin(.subheadline).weight(.semibold).monospacedDigit())
                             Text("收入 \(Money.format(monthSummary.income))")
-                                .font(.caption.monospacedDigit())
+                                .font(Font.skin(.caption).monospacedDigit())
                                 .foregroundStyle(Color.income)
                         }
                         Spacer()
@@ -122,7 +122,7 @@ private struct CalendarContent: View {
                             router.newRecord(date: dateForNewRecord)
                         } label: {
                             Label("补记", systemImage: "plus")
-                                .font(.footnote.weight(.semibold))
+                                .font(Font.skin(.footnote).weight(.semibold))
                         }
                         .buttonStyle(.glass)
                         .controlSize(.small)
@@ -149,7 +149,7 @@ private struct CalendarContent: View {
         return HStack(spacing: 4) {
             ForEach(Array(ordered.enumerated()), id: \.offset) { _, symbol in
                 Text(symbol)
-                    .font(.caption2.weight(.semibold))
+                    .font(Font.skin(.caption2).weight(.semibold))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
             }
@@ -179,7 +179,7 @@ private struct DayCell: View {
     var body: some View {
         VStack(spacing: 2) {
             Text("\(Calendar.current.component(.day, from: day))")
-                .font(.callout.weight(isToday ? .bold : .medium))
+                .font(Font.skin(.callout).weight(isToday ? .bold : .medium))
                 .foregroundStyle(isToday ? Color.accentColor : Color.primary)
             if let summary, summary.expense > 0 {
                 Text(Money.compact(summary.expense))

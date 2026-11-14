@@ -119,12 +119,16 @@ struct LedgerEditor: View {
                     HStack(spacing: 14) {
                         CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true, image: iconImage)
                         TextField("账本名称，如「旅行」「装修」", text: $name)
-                            .font(.title3.weight(.semibold))
+                            .font(Font.skin(.title3).weight(.semibold))
                     }
-                    Section("颜色") { ColorSwatchPicker(hex: $colorHex) }
-                    Section("图标") {
+                    Section { ColorSwatchPicker(hex: $colorHex) } header: {
+ SectionTitle("颜色")
+ }
+                    Section {
                         SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex), image: $iconImage).padding(.vertical, 6)
-                    }
+                    } header: {
+ SectionTitle("图标")
+ }
                 }
                 .listRowBackground(GlassRowBackground())
             }
@@ -186,11 +190,13 @@ struct CategoryManagerView: View {
                     Text("左滑可归档：归档后不再出现在记账面板，但历史账单保留。")
                 }
                 if !archived.isEmpty {
-                    Section("已归档") {
+                    Section {
                         ForEach(archived) { category in
                             row(category).opacity(0.6)
                         }
-                    }
+                    } header: {
+ SectionTitle("已归档")
+ }
                 }
             }
             .listRowBackground(GlassRowBackground())
@@ -228,7 +234,7 @@ struct CategoryManagerView: View {
                 Text(category.name).foregroundStyle(.primary)
                 Spacer()
                 Text("\(category.records?.count ?? 0) 笔")
-                    .font(.caption)
+                    .font(Font.skin(.caption))
                     .foregroundStyle(.secondary)
             }
         }
@@ -273,12 +279,16 @@ struct CategoryEditor: View {
                     HStack(spacing: 14) {
                         CategoryIcon(symbol: symbol, color: Color(hex: colorHex), size: 52, filled: true, image: iconImage)
                         TextField("分类名称", text: $name)
-                            .font(.title3.weight(.semibold))
+                            .font(Font.skin(.title3).weight(.semibold))
                     }
-                    Section("颜色") { ColorSwatchPicker(hex: $colorHex) }
-                    Section("图标") {
+                    Section { ColorSwatchPicker(hex: $colorHex) } header: {
+ SectionTitle("颜色")
+ }
+                    Section {
                         SymbolGridPicker(selection: $symbol, color: Color(hex: colorHex), image: $iconImage).padding(.vertical, 6)
-                    }
+                    } header: {
+ SectionTitle("图标")
+ }
                     if category != nil {
                         Section {
                             Button("删除分类", role: .destructive) { confirmDelete = true }
@@ -353,7 +363,7 @@ struct TagManagerView: View {
                             Circle().fill(tag.color).frame(width: 10, height: 10)
                             Text("#\(tag.name)")
                             Spacer()
-                            Text("\(tag.records?.count ?? 0) 笔").font(.caption).foregroundStyle(.secondary)
+                            Text("\(tag.records?.count ?? 0) 笔").font(Font.skin(.caption)).foregroundStyle(.secondary)
                         }
                         .contentShape(.rect)
                         .onTapGesture {
@@ -405,8 +415,8 @@ struct ExchangeRatesView: View {
                     ForEach(Currencies.common.filter { $0 != settings.baseCurrency }, id: \.self) { code in
                         HStack {
                             VStack(alignment: .leading) {
-                                Text(code).font(.headline)
-                                Text(Currencies.name(code)).font(.caption).foregroundStyle(.secondary)
+                                Text(code).font(Font.skin(.headline))
+                                Text(Currencies.name(code)).font(Font.skin(.caption)).foregroundStyle(.secondary)
                             }
                             Spacer()
                             Text("1 \(code) =")

@@ -149,7 +149,7 @@ struct NetWorthCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("净资产").font(.subheadline).foregroundStyle(.secondary)
+            Text("净资产").font(Font.skin(.subheadline)).foregroundStyle(.secondary)
             Text(Money.format(assets - liabilities))
                 .font(.money(38))
                 .minimumScaleFactor(0.5)
@@ -157,14 +157,14 @@ struct NetWorthCard: View {
                 .contentTransition(.numericText())
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("总资产").font(.caption).foregroundStyle(.secondary)
-                    Text(Money.format(assets)).font(.subheadline.weight(.semibold).monospacedDigit())
+                    Text("总资产").font(Font.skin(.caption)).foregroundStyle(.secondary)
+                    Text(Money.format(assets)).font(Font.skin(.subheadline).weight(.semibold).monospacedDigit())
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("总负债").font(.caption).foregroundStyle(.secondary)
+                    Text("总负债").font(Font.skin(.caption)).foregroundStyle(.secondary)
                     Text(Money.format(liabilities))
-                        .font(.subheadline.weight(.semibold).monospacedDigit())
+                        .font(Font.skin(.subheadline).weight(.semibold).monospacedDigit())
                         .foregroundStyle(liabilities > 0 ? Color.expense : Color.primary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -193,13 +193,13 @@ struct AccountRow: View {
             CategoryIcon(symbol: account.symbol, color: account.color, size: 40, filled: true, image: account.iconImage)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(account.name).font(.body.weight(.medium))
+                    Text(account.name).font(Font.skin(.body).weight(.medium))
                     if account.isArchived {
-                        Text("已归档").font(.caption2).foregroundStyle(.secondary)
+                        Text("已归档").font(Font.skin(.caption2)).foregroundStyle(.secondary)
                     }
                     if account.currencyCode != AppSettings.shared.baseCurrency {
                         Text(account.currencyCode)
-                            .font(.caption2.weight(.semibold))
+                            .font(Font.skin(.caption2).weight(.semibold))
                             .padding(.horizontal, 5)
                             .background(.quaternary, in: .capsule)
                     }
@@ -207,12 +207,12 @@ struct AccountRow: View {
                 if account.type == .credit {
                     creditSubtitle
                 } else if !account.note.isEmpty {
-                    Text(account.note).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    Text(account.note).font(Font.skin(.caption)).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
             Spacer()
             Text(Money.format(balance, code: account.currencyCode))
-                .font(.body.weight(.semibold).monospacedDigit())
+                .font(Font.skin(.body).weight(.semibold).monospacedDigit())
                 .foregroundStyle(balance < 0 ? Color.expense : Color.primary)
         }
         .padding(.vertical, 2)
@@ -231,7 +231,7 @@ struct AccountRow: View {
                     .foregroundStyle(days <= 3 ? Color.orange : Color.secondary)
             }
         }
-        .font(.caption)
+        .font(Font.skin(.caption))
         .foregroundStyle(.secondary)
     }
 }
@@ -263,13 +263,15 @@ struct AccountDetailView: View {
                 }
 
                 ForEach(Stats.groupedByDay(Array(records.prefix(300))), id: \.day) { group in
-                    Section(group.day.dayHeaderTitle) {
+                    Section {
                         ForEach(group.records) { record in
                             NavigationLink(value: record) {
                                 RecordRow(record: record)
                             }
                         }
-                    }
+                    } header: {
+ SectionTitle(group.day.dayHeaderTitle)
+ }
                 }
             }
             .listRowBackground(GlassRowBackground())
@@ -318,8 +320,8 @@ struct AccountDetailView: View {
             HStack(spacing: 12) {
                 CategoryIcon(symbol: account.symbol, color: account.color, size: 48, filled: true, image: account.iconImage)
                 VStack(alignment: .leading) {
-                    Text(account.type.title).font(.caption).foregroundStyle(.secondary)
-                    Text(account.type == .credit ? "当前欠款" : "当前余额").font(.subheadline)
+                    Text(account.type.title).font(Font.skin(.caption)).foregroundStyle(.secondary)
+                    Text(account.type == .credit ? "当前欠款" : "当前余额").font(Font.skin(.subheadline))
                 }
             }
             Text(Money.format(account.type == .credit ? -account.balanceCents : account.balanceCents, code: account.currencyCode))
@@ -345,8 +347,8 @@ struct AccountDetailView: View {
 
     private func info(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.caption2).foregroundStyle(.secondary)
-            Text(value).font(.caption.weight(.semibold).monospacedDigit())
+            Text(title).font(Font.skin(.caption2)).foregroundStyle(.secondary)
+            Text(value).font(Font.skin(.caption).weight(.semibold).monospacedDigit())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -359,7 +361,7 @@ struct AccountDetailView: View {
         let series = account.balanceSeries(at: cutoffs)
         let points = zip(days, series).map { BalancePoint(date: $0, value: Double($1) / 100) }
         return VStack(alignment: .leading, spacing: 8) {
-            Text("近 30 天余额").font(.subheadline.weight(.semibold))
+            Text("近 30 天余额").font(Font.skin(.subheadline).weight(.semibold))
             Chart {
                 ForEach(points) { point in
                     LineMark(x: .value("日期", point.date, unit: .day), y: .value("余额", point.value))
@@ -419,10 +421,10 @@ struct NetWorthTrend: View {
 
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("净资产走势").font(.subheadline.weight(.semibold))
+                Text("净资产走势").font(Font.skin(.subheadline).weight(.semibold))
                 Spacer()
                 Text("近 12 个月 \(last >= first ? "+" : "")\(Money.format(Money.cents(last - first)))")
-                    .font(.caption.monospacedDigit())
+                    .font(Font.skin(.caption).monospacedDigit())
                     .foregroundStyle(last >= first ? Color.income : Color.expense)
             }
             Chart(points) { point in

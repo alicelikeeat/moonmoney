@@ -68,20 +68,22 @@ private struct SearchResults: View {
         List {
             Group {
                 if text.isEmpty && scope == .all {
-                    Section("最近记录") {
+                    Section {
                         ForEach(results.prefix(30)) { record in
                             NavigationLink(value: record) { RecordRow(record: record, showDate: true) }
                         }
-                    }
+                    } header: {
+ SectionTitle("最近记录")
+ }
                 } else if results.isEmpty {
                     ContentUnavailableView.search(text: text)
                         .plainListRow()
                 } else {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("\(results.count) 笔结果").font(.headline)
+                            Text("\(results.count) 笔结果").font(Font.skin(.headline))
                             Text("支出 \(Money.format(summary.expense)) · 收入 \(Money.format(summary.income))")
-                                .font(.caption.monospacedDigit())
+                                .font(Font.skin(.caption).monospacedDigit())
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
@@ -90,11 +92,13 @@ private struct SearchResults: View {
                     .plainListRow(top: 4, bottom: 4)
 
                     ForEach(Stats.groupedByDay(Array(results.prefix(500))), id: \.day) { group in
-                        Section(group.day.dayHeaderTitle) {
+                        Section {
                             ForEach(group.records) { record in
                                 NavigationLink(value: record) { RecordRow(record: record) }
                             }
-                        }
+                        } header: {
+ SectionTitle(group.day.dayHeaderTitle)
+ }
                     }
                 }
             }

@@ -57,9 +57,9 @@ struct StatsView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Text(kind.title)
-                            Image(systemName: "chevron.down").font(.caption2.weight(.bold))
+                            Image(systemName: "chevron.down").font(Font.skin(.caption2).weight(.bold))
                         }
-                        .font(.subheadline.weight(.semibold))
+                        .font(Font.skin(.subheadline).weight(.semibold))
                         .foregroundStyle(kind.tint)
                     }
                 }
@@ -183,7 +183,7 @@ private struct StatsContent: View {
         let change = Stats.percentChange(current: total, previous: priorTotal)
         let days = Periods.elapsedDays(in: interval)
         return VStack(alignment: .leading, spacing: 14) {
-            Text("总\(kind.title)").font(.subheadline).foregroundStyle(.secondary)
+            Text("总\(kind.title)").font(Font.skin(.subheadline)).foregroundStyle(.secondary)
             HStack(alignment: .firstTextBaseline) {
                 Text(Money.format(total))
                     .font(.money(36))
@@ -195,7 +195,7 @@ private struct StatsContent: View {
                     let up = change >= 0
                     Label("\(up ? "+" : "")\(change.formatted(.percent.precision(.fractionLength(0...1))))",
                           systemImage: up ? "arrow.up.right" : "arrow.down.right")
-                        .font(.footnote.weight(.semibold))
+                        .font(Font.skin(.footnote).weight(.semibold))
                         .foregroundStyle(kind == .expense ? (up ? Color.expense : Color.income) : (up ? Color.income : Color.expense))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
@@ -215,9 +215,9 @@ private struct StatsContent: View {
 
     private func stat(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text(title).font(Font.skin(.caption)).foregroundStyle(.secondary)
             Text(value)
-                .font(.footnote.weight(.semibold).monospacedDigit())
+                .font(Font.skin(.footnote).weight(.semibold).monospacedDigit())
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
         }
@@ -237,16 +237,16 @@ private struct StatsContent: View {
 
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("趋势").font(.headline)
+                Text("趋势").font(Font.skin(.headline))
                 Spacer()
                 if let selectedBucket {
                     let value = kind == .expense ? selectedBucket.expense : selectedBucket.income
                     Text("\(selectedBucket.date.zh(periodKind == .year ? "MMMM" : "MMMd")) \(Money.format(value))")
-                        .font(.footnote.monospacedDigit().weight(.medium))
+                        .font(Font.skin(.footnote).monospacedDigit().weight(.medium))
                         .foregroundStyle(kind.tint)
                 } else {
                     Text("平均 \(Money.format(Int(average * 100)))")
-                        .font(.footnote.monospacedDigit())
+                        .font(Font.skin(.footnote).monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
             }
@@ -315,7 +315,7 @@ private struct StatsContent: View {
     private func donutCard(_ slices: [CategorySlice], total: Int) -> some View {
         let selected = selectedSlice(slices)
         return VStack(alignment: .leading, spacing: 12) {
-            Text("构成").font(.headline)
+            Text("构成").font(Font.skin(.headline))
             Chart(slices) { slice in
                 SectorMark(
                     angle: .value("金额", slice.cents),
@@ -334,18 +334,18 @@ private struct StatsContent: View {
                         VStack(spacing: 4) {
                             if let selected {
                                 SymbolGlyph(selected.symbol)
-                                    .font(.title2)
+                                    .font(Font.skin(.title2))
                                     .foregroundStyle(selected.color)
-                                Text(selected.name).font(.subheadline.weight(.semibold))
+                                Text(selected.name).font(Font.skin(.subheadline).weight(.semibold))
                                 Text(Money.format(selected.cents))
-                                    .font(.footnote.monospacedDigit())
+                                    .font(Font.skin(.footnote).monospacedDigit())
                                 Text(selected.share.formatted(.percent.precision(.fractionLength(1))))
-                                    .font(.caption)
+                                    .font(Font.skin(.caption))
                                     .foregroundStyle(.secondary)
                             } else {
-                                Text("\(slices.count) 个分类").font(.caption).foregroundStyle(.secondary)
+                                Text("\(slices.count) 个分类").font(Font.skin(.caption)).foregroundStyle(.secondary)
                                 Text(Money.format(total))
-                                    .font(.headline.monospacedDigit())
+                                    .font(Font.skin(.headline).monospacedDigit())
                             }
                         }
                         .position(x: frame.midX, y: frame.midY)
@@ -376,24 +376,24 @@ private struct StatsContent: View {
     private func rankingCard(_ slices: [CategorySlice]) -> some View {
         let maxCents = slices.first?.cents ?? 1
         return VStack(alignment: .leading, spacing: 4) {
-            Text("分类排行").font(.headline).padding(.bottom, 8)
+            Text("分类排行").font(Font.skin(.headline)).padding(.bottom, 8)
             ForEach(slices) { slice in
                 NavigationLink(value: slice) {
                     HStack(spacing: 12) {
                         CategoryIcon(symbol: slice.symbol, color: slice.color, size: 36, image: slice.image)
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
-                                Text(slice.name).font(.subheadline.weight(.medium))
+                                Text(slice.name).font(Font.skin(.subheadline).weight(.medium))
                                 Text(slice.share.formatted(.percent.precision(.fractionLength(1))))
-                                    .font(.caption)
+                                    .font(Font.skin(.caption))
                                     .foregroundStyle(.secondary)
                                 Spacer()
                                 Text(Money.format(slice.cents))
-                                    .font(.subheadline.monospacedDigit().weight(.semibold))
+                                    .font(Font.skin(.subheadline).monospacedDigit().weight(.semibold))
                             }
                             ProgressCapsule(value: Double(slice.cents) / Double(max(maxCents, 1)), tint: slice.color, height: 6)
                         }
-                        Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(.tertiary)
+                        Image(systemName: "chevron.right").font(Font.skin(.caption).bold()).foregroundStyle(.tertiary)
                     }
                     .padding(.vertical, 6)
                     .contentShape(.rect)
@@ -412,7 +412,7 @@ private struct StatsContent: View {
             .sorted { $0.baseAmountCents > $1.baseAmountCents }
             .prefix(5)
         return VStack(alignment: .leading, spacing: 4) {
-            Text("单笔 Top 5").font(.headline).padding(.bottom, 8)
+            Text("单笔 Top 5").font(Font.skin(.headline)).padding(.bottom, 8)
             ForEach(Array(top)) { record in
                 NavigationLink(value: record) {
                     RecordRow(record: record, showDate: true)
@@ -434,9 +434,9 @@ private struct FlowLegend: View {
             ForEach(slices) { slice in
                 HStack(spacing: 6) {
                     Circle().fill(slice.color).frame(width: 8, height: 8)
-                    Text(slice.name).font(.caption).lineLimit(1)
+                    Text(slice.name).font(Font.skin(.caption)).lineLimit(1)
                     Text(slice.share.formatted(.percent.precision(.fractionLength(0))))
-                        .font(.caption2)
+                        .font(Font.skin(.caption2))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -473,9 +473,9 @@ struct CategoryRecordsView: View {
                         CategoryIcon(symbol: slice.symbol, color: slice.color, size: 52, filled: true, image: slice.image)
                         VStack(alignment: .leading) {
                             Text(Money.format(total))
-                                .font(.title2.bold().monospacedDigit())
+                                .font(Font.skin(.title2).bold().monospacedDigit())
                             Text("\(matching.count) 笔 · 平均 \(Money.format(total / max(matching.count, 1)))")
-                                .font(.footnote)
+                                .font(Font.skin(.footnote))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -483,13 +483,15 @@ struct CategoryRecordsView: View {
                     .plainListRow()
                 }
                 ForEach(Stats.groupedByDay(matching), id: \.day) { group in
-                    Section(group.day.dayHeaderTitle) {
+                    Section {
                         ForEach(group.records) { record in
                             NavigationLink(value: record) {
                                 RecordRow(record: record)
                             }
                         }
-                    }
+                    } header: {
+ SectionTitle(group.day.dayHeaderTitle)
+ }
                 }
             }
             .listRowBackground(GlassRowBackground())

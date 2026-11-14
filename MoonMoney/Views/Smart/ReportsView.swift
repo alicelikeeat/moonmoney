@@ -200,12 +200,12 @@ private struct ReportContent: View {
                             if index > 0 { Divider().padding(.leading, 46) }
                             HStack(alignment: .top, spacing: 14) {
                                 Image(systemName: insight.symbol)
-                                    .font(.title2)
+                                    .font(Font.skin(.title2))
                                     .foregroundStyle(insight.tint)
                                     .frame(width: 32)
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(insight.title).font(.headline)
-                                    Text(insight.detail).font(.subheadline).foregroundStyle(.secondary)
+                                    Text(insight.title).font(Font.skin(.headline))
+                                    Text(insight.detail).font(Font.skin(.subheadline)).foregroundStyle(.secondary)
                                 }
                                 Spacer(minLength: 0)
                             }
@@ -230,8 +230,8 @@ private struct ReportContent: View {
 
     private func metric(_ title: String, _ value: String, _ color: Color) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.headline.monospacedDigit()).foregroundStyle(color).lineLimit(1).minimumScaleFactor(0.6)
+            Text(title).font(Font.skin(.caption)).foregroundStyle(.secondary)
+            Text(value).font(Font.skin(.headline).monospacedDigit()).foregroundStyle(color).lineLimit(1).minimumScaleFactor(0.6)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -240,10 +240,10 @@ private struct ReportContent: View {
     private func aiCard(insights: [Insight], summary: PeriodSummary) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Label("AI 点评", systemImage: "apple.intelligence")
-                .font(.subheadline.weight(.semibold))
+                .font(Font.skin(.subheadline).weight(.semibold))
                 .foregroundStyle(.purple)
             if let commentary {
-                Text(commentary).font(.body)
+                Text(commentary).font(Font.skin(.body))
             } else if loadingAI {
                 HStack { ProgressView(); Text("正在分析你的账单…").foregroundStyle(.secondary) }
             } else if SmartParser.isAIAvailable {
@@ -256,7 +256,7 @@ private struct ReportContent: View {
                 .tint(.purple)
             } else {
                 Text("AI 点评需要支持 Apple 智能的设备（\(SmartParser.aiStatusText)）。下面的洞察由本地规则生成。")
-                    .font(.footnote)
+                    .font(Font.skin(.footnote))
                     .foregroundStyle(.secondary)
             }
         }
@@ -305,18 +305,18 @@ struct AnnualPoster: View {
                 Image(systemName: "moon.stars.fill")
                 Text("MoonMoney · \(interval.start.zh("y")) 年度账单")
             }
-            .font(.footnote.weight(.semibold))
+            .font(Font.skin(.footnote).weight(.semibold))
             .foregroundStyle(.white.opacity(0.85))
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("这一年你花了").font(.subheadline).foregroundStyle(.white.opacity(0.8))
+                Text("这一年你花了").font(Font.skin(.subheadline)).foregroundStyle(.white.opacity(0.8))
                 Text(Money.format(summary.expense))
                     .font(.system(size: 40, weight: .heavy, design: .rounded).monospacedDigit())
                     .foregroundStyle(.white)
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
                 Text("赚了 \(Money.format(summary.income)) · 记账 \(days) 天 · \(summary.count) 笔")
-                    .font(.footnote)
+                    .font(Font.skin(.footnote))
                     .foregroundStyle(.white.opacity(0.8))
             }
 
@@ -340,14 +340,14 @@ struct AnnualPoster: View {
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array(slices.prefix(3).enumerated()), id: \.offset) { index, slice in
                     HStack {
-                        Text("\(index + 1)").font(.caption.bold()).frame(width: 20, height: 20)
+                        Text("\(index + 1)").font(Font.skin(.caption).bold()).frame(width: 20, height: 20)
                             .background(.white.opacity(0.25), in: .circle)
                         SymbolGlyph(slice.symbol)
                         Text(slice.name)
                         Spacer()
                         Text(Money.format(slice.cents)).monospacedDigit()
                     }
-                    .font(.subheadline.weight(.medium))
+                    .font(Font.skin(.subheadline).weight(.medium))
                     .foregroundStyle(.white)
                 }
             }
@@ -363,7 +363,7 @@ struct AnnualPoster: View {
                     Text("储蓄率：\(InsightEngine.percent(Double(summary.net) / Double(summary.income)))")
                 }
             }
-            .font(.footnote)
+            .font(Font.skin(.footnote))
             .foregroundStyle(.white.opacity(0.9))
         }
         .padding(24)

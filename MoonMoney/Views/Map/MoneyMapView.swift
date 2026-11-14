@@ -99,7 +99,7 @@ private struct MoneyCityView: View {
             if let selected {
                 HStack {
                     Circle().fill(Color(hex: selected.colorHex)).frame(width: 10, height: 10)
-                    Text("\(selected.category) · \(selected.month.zh("yMMM"))").font(.headline)
+                    Text("\(selected.category) · \(selected.month.zh("yMMM"))").font(Font.skin(.headline))
                     Spacer()
                     Button {
                         withAnimation(.smooth) { self.selected = nil }
@@ -110,15 +110,15 @@ private struct MoneyCityView: View {
                     .accessibilityLabel("关闭")
                 }
                 Text(Money.format(selected.cents))
-                    .font(.title2.bold().monospacedDigit())
+                    .font(Font.skin(.title2).bold().monospacedDigit())
                 let monthTotal = cells.filter { $0.column == selected.column }.reduce(0) { $0 + $1.cents }
                 Text("占当月支出 \(InsightEngine.percent(Double(selected.cents) / Double(max(monthTotal, 1))))")
-                    .font(.caption)
+                    .font(Font.skin(.caption))
                     .foregroundStyle(.secondary)
             } else {
-                Text("近 6 个月 · \(Money.format(total))").font(.headline)
+                Text("近 6 个月 · \(Money.format(total))").font(Font.skin(.headline))
                 Text("每栋楼是一个分类在一个月里的支出，越高花得越多。拖动旋转，双指缩放，点按楼体查看金额。")
-                    .font(.caption)
+                    .font(Font.skin(.caption))
                     .foregroundStyle(.secondary)
                 legend(cells)
             }
@@ -134,7 +134,7 @@ private struct MoneyCityView: View {
                     if let first = items.first {
                         HStack(spacing: 4) {
                             Circle().fill(Color(hex: first.colorHex)).frame(width: 8, height: 8)
-                            Text(first.category).font(.caption2)
+                            Text(first.category).font(Font.skin(.caption2))
                         }
                     }
                 }
@@ -342,7 +342,7 @@ private struct SpendingPlacesView: View {
                         placeCard(selected)
                     } else {
                         Text("\(clusters.count) 个地点 · \(Money.format(clusters.reduce(0) { $0 + $1.cents }))")
-                            .font(.subheadline.weight(.semibold))
+                            .font(Font.skin(.subheadline).weight(.semibold))
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
@@ -357,9 +357,9 @@ private struct SpendingPlacesView: View {
     private func placeCard(_ cluster: PlaceCluster) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Label(cluster.name, systemImage: "mappin.circle.fill").font(.headline)
+                Label(cluster.name, systemImage: "mappin.circle.fill").font(Font.skin(.headline))
                 Spacer()
-                Text(Money.format(cluster.cents)).font(.headline.monospacedDigit())
+                Text(Money.format(cluster.cents)).font(Font.skin(.headline).monospacedDigit())
                 Button {
                     withAnimation(.smooth) { selected = nil }
                 } label: {
@@ -370,14 +370,14 @@ private struct SpendingPlacesView: View {
             }
             ForEach(cluster.records.prefix(3)) { record in
                 HStack {
-                    Text(record.displayTitle).font(.caption)
-                    Text(record.date.zh("MMMd")).font(.caption2).foregroundStyle(.secondary)
+                    Text(record.displayTitle).font(Font.skin(.caption))
+                    Text(record.date.zh("MMMd")).font(Font.skin(.caption2)).foregroundStyle(.secondary)
                     Spacer()
-                    Text(Money.format(record.baseAmountCents)).font(.caption.monospacedDigit())
+                    Text(Money.format(record.baseAmountCents)).font(Font.skin(.caption).monospacedDigit())
                 }
             }
             if cluster.records.count > 3 {
-                Text("共 \(cluster.records.count) 笔").font(.caption2).foregroundStyle(.secondary)
+                Text("共 \(cluster.records.count) 笔").font(Font.skin(.caption2)).foregroundStyle(.secondary)
             }
         }
     }
@@ -429,7 +429,7 @@ private struct PlaceBubble: View {
         let height = 18 + 70 * scale
         VStack(spacing: 2) {
             Text(Money.compact(cluster.cents))
-                .font(.caption2.weight(.bold).monospacedDigit())
+                .font(Font.skin(.caption2).weight(.bold).monospacedDigit())
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .glassEffect(.regular.tint(isSelected ? Color.accentColor.opacity(0.4) : nil), in: .capsule)

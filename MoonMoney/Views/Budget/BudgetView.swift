@@ -124,8 +124,8 @@ private struct BudgetContent: View {
                     RingGauge(value: ratio, tint: tint, lineWidth: 14)
                     VStack(spacing: 0) {
                         Text(limit > 0 ? ratio.formatted(.percent.precision(.fractionLength(0))) : "—")
-                            .font(.title2.bold().monospacedDigit())
-                        Text("已用").font(.caption2).foregroundStyle(.secondary)
+                            .font(Font.skin(.title2).bold().monospacedDigit())
+                        Text("已用").font(Font.skin(.caption2)).foregroundStyle(.secondary)
                     }
                 }
                 .frame(width: 110, height: 110)
@@ -154,8 +154,8 @@ private struct BudgetContent: View {
 
     private func row(_ title: String, _ value: String, color: Color = .primary) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.subheadline.weight(.semibold).monospacedDigit()).foregroundStyle(color)
+            Text(title).font(Font.skin(.caption)).foregroundStyle(.secondary)
+            Text(value).font(Font.skin(.subheadline).weight(.semibold).monospacedDigit()).foregroundStyle(color)
         }
     }
 
@@ -184,10 +184,10 @@ private struct CategoryBudgetRow: View {
             CategoryIcon(symbol: category.symbol, color: category.color, size: 38, image: category.iconImage)
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(category.name).font(.subheadline.weight(.medium))
+                    Text(category.name).font(Font.skin(.subheadline).weight(.medium))
                     Spacer()
                     Text("\(Money.format(used)) / \(Money.format(budget))")
-                        .font(.caption.monospacedDigit())
+                        .font(Font.skin(.caption).monospacedDigit())
                         .foregroundStyle(ratio >= 1 ? Color.expense : Color.secondary)
                 }
                 ProgressCapsule(value: ratio, tint: tint, height: 6)

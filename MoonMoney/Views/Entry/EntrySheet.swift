@@ -118,7 +118,7 @@ struct EntrySheet: View {
         .overlay(alignment: .top) {
             if let savedToast {
                 Label(savedToast, systemImage: "checkmark.circle.fill")
-                    .font(.subheadline.weight(.semibold))
+                    .font(Font.skin(.subheadline).weight(.semibold))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .glassEffect(.regular.tint(Color.income.opacity(0.25)), in: .capsule)
@@ -195,7 +195,7 @@ struct EntrySheet: View {
                 TextField("添加备注…", text: $note)
                     .focused($noteFocused)
                     .submitLabel(.done)
-                    .font(.subheadline)
+                    .font(Font.skin(.subheadline))
                     .padding(.horizontal, 14)
                     .frame(height: 40)
                     .skinSurface(Capsule())
@@ -203,7 +203,7 @@ struct EntrySheet: View {
                 VStack(alignment: .trailing, spacing: 0) {
                     if keypad.hasOperator {
                         Text(keypad.expression)
-                            .font(.caption.monospacedDigit())
+                            .font(Font.skin(.caption).monospacedDigit())
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.head)
@@ -589,7 +589,7 @@ struct CategoryGrid: View {
     @ViewBuilder
     private func nameLabel(_ name: String, selected: Bool) -> some View {
         let text = Text(name)
-            .font(.caption.weight(selected ? .semibold : .regular))
+            .font(Font.skin(.caption).weight(selected ? .semibold : .regular))
             .foregroundStyle(selected || busyBackground ? .primary : .secondary)
             .lineLimit(1)
         if busyBackground {
@@ -627,7 +627,7 @@ struct TransferPanel: View {
                             Haptics.tap()
                         } label: {
                             Image(systemName: "arrow.up.arrow.down")
-                                .font(.headline)
+                                .font(Font.skin(.headline))
                                 .frame(width: 44, height: 44)
                         }
                         .buttonStyle(.glass)
@@ -650,7 +650,7 @@ struct TransferPanel: View {
 
                 if from != nil, from?.uuid == to?.uuid {
                     Label("转出与转入账户不能相同", systemImage: "exclamationmark.triangle.fill")
-                        .font(.footnote)
+                        .font(Font.skin(.footnote))
                         .foregroundStyle(.orange)
                 }
             }
@@ -673,17 +673,17 @@ struct TransferPanel: View {
                              color: selection.wrappedValue?.color ?? .gray, size: 44, filled: true,
                              image: selection.wrappedValue?.iconImage)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.caption).foregroundStyle(.secondary)
-                    Text(selection.wrappedValue?.name ?? "选择账户").font(.headline)
+                    Text(title).font(Font.skin(.caption)).foregroundStyle(.secondary)
+                    Text(selection.wrappedValue?.name ?? "选择账户").font(Font.skin(.headline))
                 }
                 Spacer()
                 if let account = selection.wrappedValue {
                     Text(Money.format(account.balanceCents, code: account.currencyCode))
-                        .font(.subheadline.monospacedDigit())
+                        .font(Font.skin(.subheadline).monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
                 Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption)
+                    .font(Font.skin(.caption))
                     .foregroundStyle(.tertiary)
             }
             .padding(16)

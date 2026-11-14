@@ -40,7 +40,7 @@ struct AIEntrySheet: View {
                     if let recognized, !recognized.isEmpty {
                         DisclosureGroup("识别到的文字") {
                             Text(recognized)
-                                .font(.caption)
+                                .font(Font.skin(.caption))
                                 .foregroundStyle(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .textSelection(.enabled)
@@ -70,7 +70,7 @@ struct AIEntrySheet: View {
                     } label: {
                         Label("保存 \(selected.count) 笔 · \(Money.format(selected.reduce(0) { $0 + $1.cents }))",
                               systemImage: "checkmark")
-                            .font(.headline)
+                            .font(Font.skin(.headline))
                             .frame(maxWidth: .infinity, minHeight: 30)
                     }
                     .buttonStyle(.glassProminent)
@@ -93,16 +93,16 @@ struct AIEntrySheet: View {
             HStack {
                 Label(SmartParser.isAIAvailable ? "Apple 智能" : "本地智能规则",
                       systemImage: SmartParser.isAIAvailable ? "apple.intelligence" : "cpu")
-                    .font(.caption.weight(.semibold))
+                    .font(Font.skin(.caption).weight(.semibold))
                     .foregroundStyle(SmartParser.isAIAvailable ? AnyShapeStyle(.purple) : AnyShapeStyle(.secondary))
                 Spacer()
                 if let engine {
-                    Text("由「\(engine.rawValue)」解析").font(.caption2).foregroundStyle(.secondary)
+                    Text("由「\(engine.rawValue)」解析").font(Font.skin(.caption2)).foregroundStyle(.secondary)
                 }
             }
             TextField("说一句话，或者点键盘上的麦克风……", text: $text, axis: .vertical)
                 .lineLimit(3...6)
-                .font(.title3)
+                .font(Font.skin(.title3))
                 .focused($focused)
                 .submitLabel(.go)
                 .onSubmit { Task { await parse() } }
@@ -134,7 +134,7 @@ struct AIEntrySheet: View {
 
     private var examplesCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("试试这样说").font(.subheadline.weight(.semibold))
+            Text("试试这样说").font(Font.skin(.subheadline).weight(.semibold))
             ForEach(examples, id: \.self) { example in
                 Button {
                     text = example
@@ -146,13 +146,13 @@ struct AIEntrySheet: View {
                         Spacer()
                         Image(systemName: "arrow.up.left").foregroundStyle(.tertiary)
                     }
-                    .font(.subheadline)
+                    .font(Font.skin(.subheadline))
                 }
                 .buttonStyle(.plain)
                 .padding(.vertical, 2)
             }
             Text("也能在「快捷指令」里把支付截图交给 MoonMoney 自动记账。")
-                .font(.caption)
+                .font(Font.skin(.caption))
                 .foregroundStyle(.secondary)
                 .padding(.top, 4)
         }
@@ -209,9 +209,9 @@ private struct DraftCard: View {
                     CategoryIcon(symbol: category?.symbol ?? "questionmark", color: category?.color ?? .gray, size: 44, filled: true, image: category?.iconImage)
                 }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(category?.name ?? "选择分类").font(.headline)
+                    Text(category?.name ?? "选择分类").font(Font.skin(.headline))
                     TextField("备注", text: $draft.note)
-                        .font(.subheadline)
+                        .font(Font.skin(.subheadline))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -245,7 +245,7 @@ private struct DraftCard: View {
                     .frame(width: 120)
             }
             DatePicker("时间", selection: $draft.date, displayedComponents: [.date, .hourAndMinute])
-                .font(.subheadline)
+                .font(Font.skin(.subheadline))
         }
         .glassCard(cornerRadius: 24, tint: draft.include ? (category?.color ?? .gray).opacity(0.1) : nil)
         .opacity(draft.include ? 1 : 0.5)

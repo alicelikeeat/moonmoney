@@ -39,11 +39,11 @@ struct KeypadView: View {
                         key {
                             input.clear()
                         } label: {
-                            Text("清空").font(.headline)
+                            Text("清空").font(Font.skin(.headline))
                         }
                     } else {
                         key(action: onAgain) {
-                            Text("再记").font(.headline)
+                            Text("再记").font(Font.skin(.headline))
                         }
                     }
                     doneKey
@@ -66,7 +66,7 @@ struct KeypadView: View {
             Button("清空", systemImage: "trash", role: .destructive) { input.clear() }
         } label: {
             keyLabel {
-                Image(systemName: "delete.left").font(.title3)
+                Image(systemName: "delete.left").font(Font.skin(.title3))
             }
         } primaryAction: {
             tapCount += 1
@@ -88,7 +88,7 @@ struct KeypadView: View {
             keyLabel {
                 VStack(spacing: 0) {
                     Text(primary).font(AppSettings.shared.isPixelSkin ? .money(24) : .title2.weight(.medium))
-                    Text(secondary).font(.caption2).foregroundStyle(.secondary)
+                    Text(secondary).font(Font.skin(.caption2)).foregroundStyle(.secondary)
                 }
             }
         } primaryAction: {
@@ -107,7 +107,7 @@ struct KeypadView: View {
             onDone()
         } label: {
             Text(input.hasOperator ? "=" : (isEditing ? "保存" : "完成"))
-                .font(.headline)
+                .font(Font.skin(.headline))
                 .frame(maxWidth: .infinity, minHeight: 46)
                 .contentShape(.rect)
         }

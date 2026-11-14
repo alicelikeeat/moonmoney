@@ -22,7 +22,7 @@ struct BackgroundSettingsView: View {
                     VStack(spacing: 10) {
                         Text("¥1,286.40")
                             .font(.money(30))
-                        Text("本月支出预览").font(.caption).foregroundStyle(.secondary)
+                        Text("本月支出预览").font(Font.skin(.caption)).foregroundStyle(.secondary)
                     }
                     .padding(24)
                     .glassEffect(.regular, in: .rect(cornerRadius: 24))
@@ -49,7 +49,7 @@ struct BackgroundSettingsView: View {
                 }
 
                 if store.isActive {
-                    Section("效果") {
+                    Section {
                         VStack(alignment: .leading) {
                             Text("模糊 \(Int(store.blur))")
                             Slider(value: $store.blur, in: 0...30)
@@ -66,7 +66,9 @@ struct BackgroundSettingsView: View {
                                 set: { store.playVideo = $0; BackgroundVideoPlayer.shared.setActive($0) }
                             ))
                         }
-                    }
+                    } header: {
+ SectionTitle("效果")
+ }
                 }
             }
             .listRowBackground(GlassRowBackground())
@@ -149,7 +151,7 @@ struct AppIconPickerView: View {
                                 }
                                 .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
                             Text(option.title)
-                                .font(.footnote.weight(current == option.iconName ? .semibold : .regular))
+                                .font(Font.skin(.footnote).weight(current == option.iconName ? .semibold : .regular))
                                 .foregroundStyle(.primary)
                         }
                     }
@@ -158,7 +160,7 @@ struct AppIconPickerView: View {
             }
             .padding(20)
             Text("iOS 只允许切换 App 内置的图标，无法使用相册照片作为桌面图标。分类、账户、账本图标则可以使用任意 Emoji。")
-                .font(.footnote)
+                .font(Font.skin(.footnote))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 20)
         }
@@ -336,11 +338,11 @@ struct AutoBookkeepingGuideView: View {
     private func step(_ index: Int, _ text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Text("\(index)")
-                .font(.caption.bold())
+                .font(Font.skin(.caption).bold())
                 .foregroundStyle(.white)
                 .frame(width: 22, height: 22)
                 .background(Color.accentColor.gradient, in: .circle)
-            Text(text).font(.subheadline)
+            Text(text).font(Font.skin(.subheadline))
         }
     }
 }
