@@ -198,7 +198,7 @@ struct EntrySheet: View {
                     .font(.subheadline)
                     .padding(.horizontal, 14)
                     .frame(height: 40)
-                    .glassEffect(.regular.interactive(), in: .capsule)
+                    .skinSurface(Capsule())
 
                 VStack(alignment: .trailing, spacing: 0) {
                     if keypad.hasOperator {
@@ -209,7 +209,7 @@ struct EntrySheet: View {
                             .truncationMode(.head)
                     }
                     Text(Money.format(keypad.cents, code: currencyCode))
-                        .font(.system(size: 34, weight: .bold, design: .rounded).monospacedDigit())
+                        .font(.money(34))
                         .foregroundStyle(kind.tint)
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
@@ -569,7 +569,7 @@ struct CategoryGrid: View {
                         Image(systemName: "slider.horizontal.3")
                             .font(.system(size: 20, weight: .semibold))
                             .frame(width: 46, height: 46)
-                            .glassEffect(.regular.interactive(), in: .circle)
+                            .skinSurface(Circle())
                         nameLabel("管理", selected: false)
                     }
                 }

@@ -3,6 +3,7 @@ import SwiftData
 
 /// Launch arguments used by CI to screenshot the app in the simulator:
 ///   -demoData          seed ~3 months of sample records and a budget (once)
+///   -skin liquid|pixel  pick the interface skin
 ///   -screen <name>     home | stats | assets | me | search | entry | ai | calendar | reports
 @MainActor
 enum DemoMode {
@@ -15,6 +16,9 @@ enum DemoMode {
 
     static func applyIfRequested() {
         let context = DataStore.context
+        if let index = arguments.firstIndex(of: "-skin"), index + 1 < arguments.count {
+            AppSettings.shared.skinRaw = arguments[index + 1]
+        }
         if arguments.contains("-demoData") {
             let count = (try? context.fetchCount(FetchDescriptor<Record>())) ?? 0
             if count == 0 {

@@ -301,5 +301,6 @@ struct AppIconOption: Identifiable, Hashable {
         AppIconOption(iconName: "AppIcon-Sakura", title: "樱花", preview: "IconPreview-Sakura"),
         AppIconOption(iconName: "AppIcon-Mono", title: "极简", preview: "IconPreview-Mono"),
         AppIconOption(iconName: "AppIcon-Gold", title: "鎏金", preview: "IconPreview-Gold"),
+        AppIconOption(iconName: "AppIcon-Pixel", title: "像素", preview: "IconPreview-Pixel"),
     ]
 }

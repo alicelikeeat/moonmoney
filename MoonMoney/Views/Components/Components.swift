@@ -9,11 +9,9 @@ import UniformTypeIdentifiers
 
 extension View {
     /// A floating Liquid Glass panel used for hero cards.
+    /// In the pixel skin this becomes a chunky bordered panel instead.
     func glassCard(cornerRadius: CGFloat = 28, tint: Color? = nil, padding: CGFloat = 18) -> some View {
-        self
-            .padding(padding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(.regular.tint(tint), in: .rect(cornerRadius: cornerRadius))
+        modifier(SkinCardModifier(cornerRadius: cornerRadius, tint: tint, padding: padding))
     }
 
     /// Clears list row chrome so a custom card can sit directly on the background.
@@ -25,6 +23,26 @@ extension View {
     }
 }
 
+struct SkinCardModifier: ViewModifier {
+    let cornerRadius: CGFloat
+    let tint: Color?
+    let padding: CGFloat
+
+    func body(content: Content) -> some View {
+        let padded = content
+            .padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        if AppSettings.shared.isPixelSkin {
+            padded
+                .background { PixelPanel() }
+                .padding(.trailing, 4)
+                .padding(.bottom, 4)
+        } else {
+            padded.glassEffect(.regular.tint(tint), in: .rect(cornerRadius: cornerRadius))
+        }
+    }
+}
+
 // MARK: - Controls that sit inside a glass card
 
 /// Liquid Glass should never be stacked on Liquid Glass. Buttons placed inside a
@@ -33,8 +51,13 @@ struct InCardButtonStyle: ButtonStyle {
     var prominent = false
     var circle = false
 
+    @ViewBuilder
     func makeBody(configuration: Configuration) -> some View {
-        InCardButtonBody(configuration: configuration, prominent: prominent, circle: circle)
+        if AppSettings.shared.isPixelSkin {
+            PixelButtonStyle(prominent: prominent, square: circle).makeBody(configuration: configuration)
+        } else {
+            InCardButtonBody(configuration: configuration, prominent: prominent, circle: circle)
+        }
     }
 }
 
@@ -76,10 +99,16 @@ extension ButtonStyle where Self == InCardButtonStyle {
 /// Row background for List / Form: Liquid Glass instead of the opaque
 /// system cell, so the page background shows through every section.
 struct GlassRowBackground: View {
+    @Environment(\.colorScheme) private var scheme
+
     var body: some View {
-        Rectangle()
-            .fill(.clear)
-            .glassEffect(BackgroundStore.shared.clearGlass ? .clear : .regular, in: .rect)
+        if AppSettings.shared.isPixelSkin {
+            Rectangle().fill(PixelPalette(scheme: scheme).panel)
+        } else {
+            Rectangle()
+                .fill(.clear)
+                .glassEffect(BackgroundStore.shared.clearGlass ? .clear : .regular, in: .rect)
+        }
     }
 }
 
@@ -105,6 +134,8 @@ struct AmbientBackground: View {
     var body: some View {
         if BackgroundStore.shared.isActive {
             CustomBackgroundView()
+        } else if AppSettings.shared.isPixelSkin {
+            PixelSkyBackground()
         } else {
             mesh
         }
@@ -150,10 +181,27 @@ struct CategoryIcon: View {
                 }
             }
                 .frame(width: size, height: size)
-                .clipShape(.circle)
+                .clipShape(AppSettings.shared.isPixelSkin ? AnyShape(PixelRect(step: size / 10)) : AnyShape(Circle()))
                 .overlay {
-                    Circle().strokeBorder(filled ? color : .white.opacity(0.25), lineWidth: filled ? 2.5 : 0.5)
+                    if AppSettings.shared.isPixelSkin {
+                        PixelRect(step: size / 10).stroke(filled ? color : Color.black.opacity(0.6), lineWidth: 2)
+                    } else {
+                        Circle().strokeBorder(filled ? color : .white.opacity(0.25), lineWidth: filled ? 2.5 : 0.5)
+                    }
                 }
+        } else if AppSettings.shared.isPixelSkin {
+            // Chunky tile with a pixelated glyph.
+            SymbolGlyph(symbol)
+                .font(.system(size: size * (SymbolGlyph.isEmoji(symbol) ? 0.56 : 0.5), weight: .black))
+                .foregroundStyle(filled ? .white : color)
+                .frame(width: size, height: size)
+                .background {
+                    ZStack {
+                        PixelRect(step: size / 10).fill(filled ? AnyShapeStyle(color) : AnyShapeStyle(color.opacity(0.22)))
+                        PixelRect(step: size / 10).stroke(Color.black.opacity(filled ? 0.7 : 0.35), lineWidth: 2)
+                    }
+                }
+                .pixellated(max(2, size / 16))
         } else {
             SymbolGlyph(symbol)
                 .font(.system(size: size * (SymbolGlyph.isEmoji(symbol) ? 0.52 : 0.44), weight: .semibold))
@@ -317,7 +365,9 @@ struct GlassChip: View {
             .padding(.horizontal, 12)
             .frame(height: 34)
             .foregroundStyle(isActive ? AnyShapeStyle(tint ?? .accentColor) : AnyShapeStyle(.primary))
-        if glass {
+        if AppSettings.shared.isPixelSkin {
+            label.background { PixelPanel(fill: isActive ? (tint ?? .accentColor).opacity(0.25) : nil, step: 3, shadowOffset: 2) }
+        } else if glass {
             label.glassEffect(.regular.tint(isActive ? (tint ?? .accentColor).opacity(0.18) : nil).interactive(), in: .capsule)
         } else {
             label.background(isActive ? AnyShapeStyle((tint ?? .accentColor).opacity(0.16)) : AnyShapeStyle(.fill.tertiary),
@@ -356,6 +406,14 @@ struct ProgressCapsule: View {
     var height: CGFloat = 8
 
     var body: some View {
+        if AppSettings.shared.isPixelSkin {
+            PixelProgressBar(value: value, tint: tint, height: max(6, height))
+        } else {
+            capsule
+        }
+    }
+
+    private var capsule: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 Capsule().fill(.quaternary)
@@ -376,13 +434,16 @@ struct RingGauge: View {
     var lineWidth: CGFloat = 12
 
     var body: some View {
+        let pixel = AppSettings.shared.isPixelSkin
         ZStack {
             Circle().stroke(.quaternary, lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: min(max(value, 0), 1))
-                .stroke(tint.gradient, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .stroke(pixel ? AnyShapeStyle(tint) : AnyShapeStyle(tint.gradient),
+                        style: StrokeStyle(lineWidth: lineWidth, lineCap: pixel ? .butt : .round))
                 .rotationEffect(.degrees(-90))
         }
+        .pixellated(4)
         .animation(.smooth, value: value)
     }
 }

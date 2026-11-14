@@ -186,7 +186,7 @@ private struct StatsContent: View {
             Text("总\(kind.title)").font(.subheadline).foregroundStyle(.secondary)
             HStack(alignment: .firstTextBaseline) {
                 Text(Money.format(total))
-                    .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
+                    .font(.money(36))
                     .contentTransition(.numericText())
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)

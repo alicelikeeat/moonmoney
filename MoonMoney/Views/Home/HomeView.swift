@@ -301,7 +301,7 @@ struct MonthSummaryCard: View {
             }
 
             Text(Money.format(summary.expense))
-                .font(.system(size: 40, weight: .bold, design: .rounded).monospacedDigit())
+                .font(.money(40))
                 .contentTransition(.numericText())
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)

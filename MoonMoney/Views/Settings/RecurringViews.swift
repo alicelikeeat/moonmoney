@@ -19,7 +19,7 @@ struct RecurringListView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("订阅与固定支出（每月约）").font(.subheadline).foregroundStyle(.secondary)
                     Text(Money.format(Int(monthly)))
-                        .font(.system(size: 32, weight: .bold, design: .rounded).monospacedDigit())
+                        .font(.money(32))
                     Text("\(active.count) 个生效中的规则，到期时自动入账").font(.caption).foregroundStyle(.secondary)
                 }
                 .glassCard(cornerRadius: 28, tint: Color.purple.opacity(0.1))

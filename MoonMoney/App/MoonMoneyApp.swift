@@ -19,6 +19,8 @@ struct MoonMoneyApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                // The pixel skin turns every system font monospaced for a retro feel.
+                .fontDesign(settings.isPixelSkin ? .monospaced : nil)
                 .environment(settings)
                 .environment(router)
                 .environment(lock)

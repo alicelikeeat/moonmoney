@@ -92,6 +92,13 @@ final class AppSettings {
         didSet { defaults.set(recordLocation, forKey: Keys.recordLocation) }
     }
 
+    /// Interface skin: "liquid" (Liquid Glass) or "pixel".
+    var skinRaw: String {
+        didSet { defaults.set(skinRaw, forKey: Keys.skin) }
+    }
+
+    var isPixelSkin: Bool { skinRaw == "pixel" }
+
     /// Use Apple Intelligence when the device supports it.
     var aiEnabled: Bool {
         didSet { defaults.set(aiEnabled, forKey: Keys.ai) }
@@ -125,6 +132,7 @@ final class AppSettings {
         budgetThresholds = thresholds.isEmpty ? [100] : thresholds.sorted()
         budgetPaceAlerts = defaults.object(forKey: Keys.paceAlerts) as? Bool ?? true
         recordLocation = defaults.bool(forKey: Keys.recordLocation)
+        skinRaw = defaults.string(forKey: Keys.skin) ?? "liquid"
     }
 
     /// Re-reads values another process (the app vs. the widget) may have changed.
@@ -186,6 +194,7 @@ final class AppSettings {
         static let thresholds = "budgetThresholds"
         static let paceAlerts = "budgetPaceAlerts"
         static let recordLocation = "recordLocation"
+        static let skin = "skin"
     }
 }
 

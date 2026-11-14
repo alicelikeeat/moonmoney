@@ -151,7 +151,7 @@ struct NetWorthCard: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("净资产").font(.subheadline).foregroundStyle(.secondary)
             Text(Money.format(assets - liabilities))
-                .font(.system(size: 38, weight: .bold, design: .rounded).monospacedDigit())
+                .font(.money(38))
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
                 .contentTransition(.numericText())
@@ -323,7 +323,7 @@ struct AccountDetailView: View {
                 }
             }
             Text(Money.format(account.type == .credit ? -account.balanceCents : account.balanceCents, code: account.currencyCode))
-                .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
+                .font(.money(36))
                 .contentTransition(.numericText())
             if account.type == .credit {
                 HStack {

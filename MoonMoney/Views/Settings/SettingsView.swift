@@ -53,6 +53,10 @@ struct SettingsView: View {
                     }
 
                     Section("个性化") {
+                        NavigationLink { SkinPickerView() } label: {
+                            SettingsLabel("界面皮肤", symbol: "square.grid.3x3.fill", color: .orange,
+                                          subtitle: settings.skin.title)
+                        }
                         NavigationLink { BackgroundSettingsView() } label: {
                             SettingsLabel("自定义背景（图片 / GIF / 视频）", symbol: "photo.fill", color: .pink)
                         }

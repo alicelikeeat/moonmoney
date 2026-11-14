@@ -21,7 +21,7 @@ struct BackgroundSettingsView: View {
                     AmbientBackground()
                     VStack(spacing: 10) {
                         Text("¥1,286.40")
-                            .font(.system(size: 30, weight: .bold, design: .rounded))
+                            .font(.money(30))
                         Text("本月支出预览").font(.caption).foregroundStyle(.secondary)
                     }
                     .padding(24)

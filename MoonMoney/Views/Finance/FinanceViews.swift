@@ -498,7 +498,7 @@ struct ReimbursementsView: View {
             Group {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("待报销").font(.subheadline).foregroundStyle(.secondary)
-                    Text(Money.format(pendingTotal)).font(.system(size: 32, weight: .bold, design: .rounded).monospacedDigit())
+                    Text(Money.format(pendingTotal)).font(.money(32))
                     Text("\(pending.count) 笔 · 记账时打开「报销」即可加入").font(.caption).foregroundStyle(.secondary)
                 }
                 .glassCard(cornerRadius: 28, tint: Color.cyan.opacity(0.08))

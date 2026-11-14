@@ -18,7 +18,7 @@ struct RecordDetailView: View {
                     Text(record.displayTitle)
                         .font(.headline)
                     AmountText(cents: record.amountCents, kind: record.kind, code: record.currencyCode,
-                               font: .system(size: 36, weight: .bold, design: .rounded))
+                               font: .money(36))
                     if record.currencyCode != AppSettings.shared.baseCurrency {
                         Text("约 \(Money.format(record.baseAmountCents))")
                             .font(.footnote)

@@ -57,7 +57,7 @@ struct KeypadView: View {
         key {
             input.type(value)
         } label: {
-            Text(value).font(.title2.weight(.medium))
+            Text(value).font(AppSettings.shared.isPixelSkin ? .money(26) : .title2.weight(.medium))
         }
     }
 
@@ -73,8 +73,7 @@ struct KeypadView: View {
             input.backspace()
         }
         .menuStyle(.button)
-        .buttonStyle(.glass)
-        .buttonBorderShape(.roundedRectangle(radius: 16))
+        .skinButton()
         .accessibilityLabel("删除")
         .accessibilityHint("长按可清空")
     }
@@ -88,7 +87,7 @@ struct KeypadView: View {
         } label: {
             keyLabel {
                 VStack(spacing: 0) {
-                    Text(primary).font(.title2.weight(.medium))
+                    Text(primary).font(AppSettings.shared.isPixelSkin ? .money(24) : .title2.weight(.medium))
                     Text(secondary).font(.caption2).foregroundStyle(.secondary)
                 }
             }
@@ -97,8 +96,7 @@ struct KeypadView: View {
             input.type(primary)
         }
         .menuStyle(.button)
-        .buttonStyle(.glass)
-        .buttonBorderShape(.roundedRectangle(radius: 16))
+        .skinButton()
         .accessibilityLabel(primary == "+" ? "加" : "减")
         .accessibilityHint(secondary == "×" ? "长按选择乘" : "长按选择除")
     }
@@ -113,8 +111,7 @@ struct KeypadView: View {
                 .frame(maxWidth: .infinity, minHeight: 46)
                 .contentShape(.rect)
         }
-        .buttonStyle(.glassProminent)
-        .buttonBorderShape(.roundedRectangle(radius: 16))
+        .skinButton(prominent: true)
         .tint(tint)
     }
 
@@ -125,8 +122,7 @@ struct KeypadView: View {
         } label: {
             keyLabel(label)
         }
-        .buttonStyle(.glass)
-        .buttonBorderShape(.roundedRectangle(radius: 16))
+        .skinButton()
     }
 
     private func keyLabel<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
