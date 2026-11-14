@@ -121,8 +121,11 @@ def build(path):
                        "uniqueFontIdentifier": "MoonPixel-Regular", "fullName": "MoonPixel Regular",
                        "psName": "MoonPixel-Regular", "version": "Version 1.0",
                        "copyright": "MoonMoney original pixel font"})
-    fb.setupOS2(sTypoAscender=ASCENT_PX * PX, sTypoDescender=-DESCENT_PX * PX, sTypoLineGap=0,
-                usWinAscent=ASCENT_PX * PX, usWinDescent=DESCENT_PX * PX, sxHeight=5 * PX, sCapHeight=7 * PX)
+    fb.setupOS2(version=4, fsType=0, achVendID="MOON", usWeightClass=400, usWidthClass=5,
+                fsSelection=0x40,  # REGULAR
+                sTypoAscender=ASCENT_PX * PX, sTypoDescender=-DESCENT_PX * PX, sTypoLineGap=0,
+                usWinAscent=ASCENT_PX * PX, usWinDescent=DESCENT_PX * PX, sxHeight=5 * PX, sCapHeight=7 * PX,
+                ulUnicodeRange1=0b11, ulCodePageRange1=0b1)
     fb.setupPost()
     fb.save(path)
 

@@ -180,6 +180,12 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .background { AmbientBackground(tint: .indigo) }
             .navigationTitle("我的")
+            .navigationDestination(isPresented: Binding(
+                get: { Router.shared.showSkinPicker },
+                set: { Router.shared.showSkinPicker = $0 }
+            )) {
+                SkinPickerView()
+            }
             .alert("提示", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
                 Button("好") { message = nil }
             } message: {

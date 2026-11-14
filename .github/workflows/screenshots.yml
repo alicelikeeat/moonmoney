@@ -78,7 +78,7 @@ jobs:
           # Pixel skin
           for mode in light dark; do
             xcrun simctl ui "$UDID" appearance "$mode"
-            for screen in home stats entry me; do
+            for screen in home stats entry me skins; do
               xcrun simctl terminate "$UDID" com.moonmoney.app 2>/dev/null || true
               xcrun simctl launch "$UDID" com.moonmoney.app -demoData -skin pixel -screen "$screen"
               sleep 8

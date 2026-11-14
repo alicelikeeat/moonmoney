@@ -1,4 +1,6 @@
+import CoreText
 import SwiftUI
+import UIKit
 
 // MARK: - Skin
 
@@ -184,11 +186,33 @@ extension View {
 
 // MARK: - Fonts
 
+/// Makes sure the bundled MoonPixel font is registered and remembers its real name.
+enum PixelFont {
+    /// PostScript name of the loaded font, or nil if it could not be loaded.
+    static let name: String? = {
+        if let existing = UIFont.fontNames(forFamilyName: "MoonPixel").first { return existing }
+        guard let url = Bundle.main.url(forResource: "MoonPixel", withExtension: "ttf") else { return nil }
+        var error: Unmanaged<CFError>?
+        CTFontManagerRegisterFontsForURL(url as CFURL, .process, &error)
+        if let existing = UIFont.fontNames(forFamilyName: "MoonPixel").first { return existing }
+        // Fall back to reading the name straight from the file.
+        guard let descriptors = CTFontManagerCreateFontDescriptorsFromURL(url as CFURL) as? [CTFontDescriptor],
+              let first = descriptors.first,
+              let ps = CTFontDescriptorCopyAttribute(first, kCTFontNameAttribute) as? String else { return nil }
+        return UIFont(name: ps, size: 12) != nil ? ps : nil
+    }()
+
+    static var isLoaded: Bool { name != nil }
+}
+
 extension Font {
     /// Big money figures: the MoonPixel font in the pixel skin, rounded system otherwise.
     static func money(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
+        if AppSettings.shared.isPixelSkin, let name = PixelFont.name {
+            return .custom(name, fixedSize: size * 0.92)
+        }
         if AppSettings.shared.isPixelSkin {
-            return .custom("MoonPixel", size: size * 0.92)
+            return .system(size: size, weight: .heavy, design: .monospaced)
         }
         return .system(size: size, weight: weight, design: .rounded).monospacedDigit()
     }

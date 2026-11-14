@@ -34,6 +34,12 @@ struct SkinPickerView: View {
                     }
                 }
 
+                Label(PixelFont.isLoaded ? "像素字体已加载：\(PixelFont.name ?? "")" : "像素字体未加载，已使用等宽字体代替",
+                      systemImage: PixelFont.isLoaded ? "checkmark.seal" : "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
                 Text("像素皮肤会把卡片、按钮、进度条、分类图标和背景换成复古像素风格，金额使用 MoonMoney 原创像素字体。导航栏和标签栏保持系统样式。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -101,7 +107,7 @@ private struct SkinPreviewCard: View {
         let content = VStack(alignment: .leading, spacing: 6) {
             Text("十一月支出").font(.caption).foregroundStyle(.secondary)
             Text("¥1,654.37")
-                .font(skin == .pixel ? .custom("MoonPixel", size: 30) : .system(size: 30, weight: .bold, design: .rounded))
+                .font(skin == .pixel ? .custom(PixelFont.name ?? "Menlo", fixedSize: 30) : .system(size: 30, weight: .bold, design: .rounded))
             HStack(spacing: 2) {
                 ForEach(0..<12, id: \.self) { index in
                     if skin == .pixel {

@@ -32,6 +32,9 @@ enum DemoMode {
         let router = Router.shared
         switch screen {
         case "stats": router.tab = .stats
+        case "skins":
+            router.tab = .me
+            router.showSkinPicker = true
         case "map", "places", "alerts", "calendar":
             router.tab = .home
             router.homeRoute = ["map": .map, "places": .places, "alerts": .alerts, "calendar": .calendar][screen]

@@ -81,6 +81,8 @@ final class Router {
     var tab: AppTab = .home
     var entry: EntryRequest?
     var showAIEntry = false
+    /// Demo/screenshot helper: open the skin picker on the 我的 tab.
+    var showSkinPicker = false
     /// A Home screen to push next (consumed by HomeView).
     var homeRoute: HomeRoute?
     /// In-app budget alert banner.
