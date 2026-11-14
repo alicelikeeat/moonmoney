@@ -60,6 +60,9 @@ jobs:
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "BUILD=$BUILD" >> "$GITHUB_ENV"
           cp MoonMoney-unsigned.ipa "MoonMoney-${VERSION}.ipa"
+          # Lite build without the widget extension: easier to sign with a free Apple ID.
+          rm -rf Payload/MoonMoney.app/PlugIns
+          zip -qry "MoonMoney-${VERSION}-lite.ipa" Payload
           echo "Version $VERSION ($BUILD)"
 
       - uses: actions/upload-artifact@v4
@@ -74,10 +77,15 @@ jobs:
           # One release per marketing version (e.g. v1.0), refreshed with each new build.
           TAG="v${VERSION}"
           gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
-          gh release create "$TAG" "MoonMoney-${VERSION}.ipa" \
+          gh release create "$TAG" "MoonMoney-${VERSION}.ipa" "MoonMoney-${VERSION}-lite.ipa" \
             --target "$GITHUB_SHA" \
             --latest \
             --title "MoonMoney ${VERSION}" \
             --notes "MoonMoney ${VERSION}（构建 ${BUILD}，commit ${GITHUB_SHA::7}）。
 
-          未签名 IPA，需用 AltStore / SideStore / 爱思助手 / TrollStore 等工具自签后安装，系统要求 iOS 26。新构建会直接覆盖安装旧版本，数据保留。"
+          未签名 IPA，需用 AltStore / SideStore / 爱思助手 / TrollStore 等工具自签后安装，系统要求 iOS 26。
+
+          - MoonMoney-${VERSION}.ipa：完整版（含桌面小组件、控制中心按钮）
+          - MoonMoney-${VERSION}-lite.ipa：精简版（不含小组件），免费 Apple ID 签名更容易成功
+
+          如果手机上装过 2.0 版本，请先在「我的 → 数据管理」导出备份，删除旧 App 后再安装。"
