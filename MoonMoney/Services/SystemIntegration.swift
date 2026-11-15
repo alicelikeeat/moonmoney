@@ -19,6 +19,7 @@ enum AppServices {
     /// Call after inserting or editing records.
     static func recordsChanged(_ records: [Record], context: ModelContext) {
         WidgetCenter.shared.reloadAllTimelines()
+        if !records.isEmpty { PetCenter.shared.fed(context: context) }
         for record in records {
             Spotlight.index(record)
             if record.kind != .transfer, let category = record.category, !record.note.isEmpty {
@@ -30,6 +31,7 @@ enum AppServices {
 
     static func recordDeleted(_ id: UUID) {
         WidgetCenter.shared.reloadAllTimelines()
+        PetCenter.shared.refresh(context: DataStore.context)
         Spotlight.remove(id)
     }
 }

@@ -200,6 +200,13 @@ struct EntrySheet: View {
                     .frame(height: 40)
                     .skinSurface(Capsule())
 
+                if AppSettings.shared.petEnabled {
+                    LivePet(size: 34, interactive: false,
+                            forced: keypad.cents >= 50_000 ? .eat : (keypad.cents > 0 ? .happy : nil))
+                        .frame(width: 36, height: 36)
+                        .accessibilityHidden(true)
+                }
+
                 VStack(alignment: .trailing, spacing: 0) {
                     if keypad.hasOperator {
                         Text(keypad.expression)

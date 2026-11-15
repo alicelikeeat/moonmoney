@@ -230,3 +230,41 @@ struct LedgerMathTests {
         #expect(backup.categories.count == Seed.expense.count + Seed.income.count)
     }
 }
+
+// MARK: - Pixel pet
+
+@MainActor
+struct PetEngineTests {
+    @Test func eggUntilFirstRecord() throws {
+        let context = try makeTestContext()
+        let status = PetEngine.compute(context: context)
+        #expect(status.stage == .egg)
+        #expect(status.streak == 0)
+    }
+
+    @Test func streakAndGrowth() throws {
+        let context = try makeTestContext()
+        let cal = Calendar.current
+        // Three consecutive days ending today, then a gap, then one older day.
+        for offset in [0, 1, 2, 5] {
+            let date = try #require(cal.date(byAdding: .day, value: -offset, to: .now))
+            context.insert(Record(kind: .expense, amountCents: 100, date: date))
+        }
+        try context.save()
+        let status = PetEngine.compute(context: context)
+        #expect(status.streak == 3)
+        #expect(status.recordedDays == 4)
+        #expect(status.todayCount == 1)
+        #expect(status.stage == .baby)
+        #expect(status.mood == .happy)
+        #expect(status.progress >= 0 && status.progress <= 1)
+    }
+
+    @Test func sleepsAfterTwoQuietDays() throws {
+        let context = try makeTestContext()
+        let date = try #require(Calendar.current.date(byAdding: .day, value: -3, to: .now))
+        context.insert(Record(kind: .expense, amountCents: 100, date: date))
+        try context.save()
+        #expect(PetEngine.compute(context: context).mood == .sleepy)
+    }
+}

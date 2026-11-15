@@ -109,6 +109,21 @@ final class AppSettings {
         didSet { defaults.set(moneyFontRaw, forKey: Keys.moneyFont) }
     }
 
+    /// Pixel pet companion.
+    var petEnabled: Bool {
+        didSet { defaults.set(petEnabled, forKey: Keys.petEnabled) }
+    }
+
+    /// "rabbit", "cat" or "dragon".
+    var petSpeciesRaw: String {
+        didSet { defaults.set(petSpeciesRaw, forKey: Keys.petSpecies) }
+    }
+
+    /// Custom pet name ("" = the species' default name).
+    var petName: String {
+        didSet { defaults.set(petName, forKey: Keys.petName) }
+    }
+
     /// Use Apple Intelligence when the device supports it.
     var aiEnabled: Bool {
         didSet { defaults.set(aiEnabled, forKey: Keys.ai) }
@@ -143,6 +158,9 @@ final class AppSettings {
         budgetPaceAlerts = defaults.object(forKey: Keys.paceAlerts) as? Bool ?? true
         recordLocation = defaults.bool(forKey: Keys.recordLocation)
         skinRaw = defaults.string(forKey: Keys.skin) ?? "liquid"
+        petEnabled = defaults.object(forKey: Keys.petEnabled) as? Bool ?? true
+        petSpeciesRaw = defaults.string(forKey: Keys.petSpecies) ?? "rabbit"
+        petName = defaults.string(forKey: Keys.petName) ?? ""
         pixelFontRaw = defaults.string(forKey: Keys.pixelFont) ?? "ark"
         moneyFontRaw = defaults.string(forKey: Keys.moneyFont) ?? "body"
     }
@@ -207,6 +225,9 @@ final class AppSettings {
         static let paceAlerts = "budgetPaceAlerts"
         static let recordLocation = "recordLocation"
         static let skin = "skin"
+        static let petEnabled = "petEnabled"
+        static let petSpecies = "petSpecies"
+        static let petName = "petName"
         static let pixelFont = "pixelFont"
         static let moneyFont = "moneyFont"
     }

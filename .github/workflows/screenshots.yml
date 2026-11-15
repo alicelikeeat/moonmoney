@@ -68,7 +68,7 @@ jobs:
           mkdir -p shots
           for mode in light dark; do
             xcrun simctl ui "$UDID" appearance "$mode"
-            for screen in home stats assets me entry ai map places alerts; do
+            for screen in home stats assets me entry ai map places alerts pet; do
               xcrun simctl terminate "$UDID" com.moonmoney.app 2>/dev/null || true
               xcrun simctl launch "$UDID" com.moonmoney.app -demoData -screen "$screen"
               if [ "$screen" = "places" ]; then sleep 14; else sleep 8; fi
@@ -78,7 +78,7 @@ jobs:
           # Pixel skin
           for mode in light dark; do
             xcrun simctl ui "$UDID" appearance "$mode"
-            for screen in home stats entry me skins; do
+            for screen in home stats entry me skins pet; do
               xcrun simctl terminate "$UDID" com.moonmoney.app 2>/dev/null || true
               xcrun simctl launch "$UDID" com.moonmoney.app -demoData -skin pixel -screen "$screen"
               sleep 8

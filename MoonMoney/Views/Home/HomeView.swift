@@ -7,6 +7,7 @@ enum HomeRoute: Hashable {
     case alerts
     case map
     case places
+    case pet
 }
 
 struct HomeView: View {
@@ -80,6 +81,7 @@ struct HomeView: View {
                     case .alerts: BudgetAlertsView()
                     case .map: MoneyMapView()
                     case .places: MoneyMapView(initialMode: .places)
+                    case .pet: PetHomeView()
                     }
                 }
                 .navigationDestination(for: Record.self) { record in
@@ -134,7 +136,12 @@ struct MonthRecordsList: View {
 
         List {
             Group {
-                MonthSummaryCard(
+                if AppSettings.shared.petEnabled && interval.contains(.now) {
+                PetPerch()
+                    .plainListRow(top: 0, bottom: 0)
+            }
+
+            MonthSummaryCard(
                     interval: interval,
                     summary: summary,
                     budgetCents: totalBudget?.amountCents ?? 0,

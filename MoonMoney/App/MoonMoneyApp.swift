@@ -126,6 +126,7 @@ struct RootView: View {
                 WidgetSync.reload()
             case .active:
                 if RecurringEngine.run(in: context) > 0 { WidgetSync.reload() }
+                PetCenter.shared.refresh(context: context)
                 BackgroundVideoPlayer.shared.setActive(true)
                 if let action = PendingActions.consume() { router.handle(action) }
                 if lock.isLocked && returnedFromBackground {
@@ -137,6 +138,7 @@ struct RootView: View {
             }
         }
         .task {
+            PetCenter.shared.refresh(context: context)
             if lock.isLocked { await lock.unlock() }
         }
     }
@@ -173,9 +175,14 @@ private struct TodaySpendBar: View {
             router.newRecord()
         } label: {
             HStack(spacing: 10) {
-                Image(systemName: "moon.stars.fill")
-                    .foregroundStyle(.tint)
-                    .symbolEffect(.bounce, value: today.count)
+                if AppSettings.shared.petEnabled {
+                    LivePet(size: 26, interactive: false)
+                        .frame(width: 30, height: 30)
+                } else {
+                    Image(systemName: "moon.stars.fill")
+                        .foregroundStyle(.tint)
+                        .symbolEffect(.bounce, value: today.count)
+                }
                 if placement == .inline {
                     Text(Money.format(spent))
                         .font(Font.skin(.subheadline).monospacedDigit().weight(.semibold))

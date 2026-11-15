@@ -19,6 +19,20 @@ struct SettingsView: View {
                     profileCard
                         .plainListRow(top: 8, bottom: 8)
 
+                    NavigationLink { PetHomeView() } label: {
+                        HStack(spacing: 14) {
+                            PetSpriteView(species: PetCenter.shared.status.species, stage: PetCenter.shared.status.stage,
+                                          expression: .happy)
+                                .frame(width: 44, height: 44)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(PetCenter.shared.status.name).font(Font.skin(.headline))
+                                Text("\(PetCenter.shared.status.stage.title) · \(PetCenter.shared.status.mood.title) · 连续 \(PetCenter.shared.status.streak) 天")
+                                    .font(Font.skin(.caption))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
                     Section {
                         Button {
                             Router.shared.showAIEntry = true

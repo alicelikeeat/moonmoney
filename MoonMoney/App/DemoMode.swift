@@ -41,9 +41,9 @@ enum DemoMode {
         case "skins":
             router.tab = .me
             router.showSkinPicker = true
-        case "map", "places", "alerts", "calendar":
+        case "map", "places", "alerts", "calendar", "pet":
             router.tab = .home
-            router.homeRoute = ["map": .map, "places": .places, "alerts": .alerts, "calendar": .calendar][screen]
+            router.homeRoute = ["map": .map, "places": .places, "alerts": .alerts, "calendar": .calendar, "pet": .pet][screen]
         case "assets": router.tab = .assets
         case "me": router.tab = .me
         case "search": router.tab = .search
