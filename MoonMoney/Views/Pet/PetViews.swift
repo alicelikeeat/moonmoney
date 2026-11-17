@@ -1,85 +1,5 @@
 import SwiftUI
 
-// MARK: - Static sprite
-
-/// Draws one frame of a pet on a 20×20 pixel grid.
-struct PetSpriteView: View {
-    let species: PetSpecies
-    let stage: PetStage
-    var expression: PetExpression = .normal
-    var stepB = false
-    var flipped = false
-
-    var body: some View {
-        Canvas(rendersAsynchronously: false) { context, size in
-            let grid = composeGrid()
-            let palette = paletteColors()
-            let cell = floor(min(size.width, size.height) / 20 * stage.scale * 2) / 2
-            let total = cell * 20
-            let originX = (size.width - total) / 2
-            let originY = size.height - total
-            for (r, row) in grid.enumerated() {
-                for (c, code) in row.enumerated() where code != "." {
-                    guard let color = palette[code] else { continue }
-                    let col = flipped ? 19 - c : c
-                    let rect = CGRect(x: originX + CGFloat(col) * cell, y: originY + CGFloat(r) * cell,
-                                      width: cell + 0.5, height: cell + 0.5)
-                    context.fill(Path(rect), with: .color(color))
-                }
-            }
-        }
-        .accessibilityHidden(true)
-    }
-
-    private func paletteColors() -> [Character: Color] {
-        if stage == .egg {
-            let spot = species.sheet.palette["b"].map(Color.init(hex:)) ?? .pink
-            return ["o": Color(hex: "#3A2E4F"), "b": Color(hex: "#FFF4E0"),
-                    "s": species == .rabbit ? Color(hex: "#FF9EC4") : spot]
-        }
-        var result: [Character: Color] = [:]
-        for (key, hex) in species.sheet.palette { result[key] = Color(hex: hex) }
-        return result
-    }
-
-    private func composeGrid() -> [[Character]] {
-        if stage == .egg { return PetSprites.egg.map(Array.init) }
-        let sheet = species.sheet
-        var grid = sheet.body.map(Array.init)
-        func set(_ r: Int, _ c: Int, _ code: Character) {
-            guard r >= 0, r < 20, c >= 0, c < 20 else { return }
-            grid[r][c] = code
-        }
-        for eye in sheet.eyes {
-            switch expression {
-            case .sleep, .blink:
-                set(eye.row + 1, eye.col, "o"); set(eye.row + 1, eye.col + 1, "o")
-            case .happy:
-                set(eye.row, eye.col, "o"); set(eye.row, eye.col + 1, "o")
-                set(eye.row + 1, eye.col - 1, "o"); set(eye.row + 1, eye.col + 2, "o")
-            case .normal, .eat:
-                set(eye.row, eye.col, "o"); set(eye.row + 1, eye.col, "o")
-                set(eye.row, eye.col + 1, "o"); set(eye.row + 1, eye.col + 1, "o")
-            }
-        }
-        let mouth = sheet.mouth
-        set(mouth.row, mouth.col, "o"); set(mouth.row, mouth.col + 1, "o")
-        if expression == .eat {
-            set(mouth.row + 1, mouth.col, "p"); set(mouth.row + 1, mouth.col + 1, "p")
-        }
-        for cheek in sheet.cheeks {
-            set(cheek.row, cheek.col, "p"); set(cheek.row, cheek.col + 1, "p")
-        }
-        for foot in stepB ? sheet.feetB : sheet.feetA {
-            for c in foot.from...foot.to { set(foot.row, c, "o") }
-        }
-        if stage == .adult {
-            for paint in sheet.accessory { set(paint.row, paint.col, paint.code) }
-        }
-        return grid
-    }
-}
-
 // MARK: - Live, animated pet
 
 /// The animated pet: idles, blinks, walks, eats coins, sleeps, worries and cheers.
@@ -164,6 +84,12 @@ struct LivePet: View {
         return f
     }
 
+    private func customFrame(tick: Int) -> Int {
+        let count = PetCustomLibrary.frameCount(id: settings.petCustomID)
+        guard count > 1 else { return 0 }
+        return (tick / 2) % count
+    }
+
     @ViewBuilder
     private func frame(center: PetCenter, t: TimeInterval, width: CGFloat, now: Date) -> some View {
         let status = center.status
@@ -177,8 +103,9 @@ struct LivePet: View {
                     .fill(.black.opacity(0.15))
                     .frame(width: size * 0.6, height: size * 0.08)
                     .offset(y: size * 0.02)
-                PetSpriteView(species: status.species, stage: status.stage, expression: f.expression,
-                              stepB: f.walking && f.tick % 2 == 0, flipped: f.flipped)
+                PetPixel(species: status.species, stage: status.stage, expression: f.expression, mood: status.mood,
+                         customID: settings.petCustomID, frameIndex: customFrame(tick: f.tick),
+                         centered: false, stepB: f.walking && f.tick % 2 == 0, flipped: f.flipped)
                     .frame(width: size, height: size)
                     .rotationEffect(.degrees(f.wobble), anchor: .bottom)
                     .offset(y: -f.lift)
@@ -277,6 +204,7 @@ struct SpeechBubble: View {
 /// The row on the home screen where the pet strolls above the month card.
 struct PetPerch: View {
     @Environment(Router.self) private var router
+    @Environment(\.modelContext) private var context
 
     var body: some View {
         LivePet(size: 52, roams: true)
@@ -284,6 +212,9 @@ struct PetPerch: View {
             .contextMenu {
                 Button("看看\(PetCenter.shared.status.name)", systemImage: "pawprint.fill") {
                     router.homeRoute = .pet
+                }
+                Button(PetSessionStore.isActive() ? "结束今日记账" : "开始今日记账", systemImage: "livephoto") {
+                    Task { _ = await PetSessionActions.toggle(context: context) }
                 }
             }
     }

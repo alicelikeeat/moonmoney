@@ -280,6 +280,9 @@ struct QuickLogIntent: AppIntent {
         AppGroup.defaults.set(["title": (category?.name ?? "支出") + (note.isEmpty ? "" : " · \(note)"),
                                "cents": amountCents, "at": Date.now.timeIntervalSince1970],
                               forKey: QuickLogStore.lastLogKey)
+        let snapshot = PetSnapshotLogic.capture(context: context)
+        PetStateStore.save(snapshot, reloadWidgets: false)
+        await PetActivityController.update(snapshot: snapshot)
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }

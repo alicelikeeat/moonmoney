@@ -4,6 +4,8 @@ on:
   push:
     branches: [main, "ccr-*"]
     paths-ignore: ["**.md"]
+  pull_request:
+    paths-ignore: ["**.md"]
   workflow_dispatch:
 
 permissions:
@@ -76,9 +78,19 @@ jobs:
           path: MoonMoney-unsigned.ipa
 
       - name: Publish GitHub Release
+        # Pull requests build the IPA so the change compiles, but must not refresh v1.0 or any other release.
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/ccr-'))
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            echo "Pull request: leaving releases untouched."
+            exit 0
+          fi
+          case "${GITHUB_REF}" in
+            refs/heads/main|refs/heads/ccr-*) ;;
+            *) echo "Not a release branch (${GITHUB_REF}): leaving releases untouched."; exit 0 ;;
+          esac
           # One release per marketing version (e.g. v1.0), refreshed with each new build.
           TAG="v${VERSION}"
           # Never delete the release: replacing assets in place keeps download links alive.
@@ -90,7 +102,7 @@ jobs:
 
           未签名 IPA，需用 AltStore / SideStore / 爱思助手 / TrollStore 等工具自签后安装，系统要求 iOS 26。
 
-          - MoonMoney-${VERSION}.ipa：完整版（含桌面小组件、控制中心按钮）
-          - MoonMoney-${VERSION}-lite.ipa：精简版（不含小组件），免费 Apple ID 签名更容易成功
+          - MoonMoney-${VERSION}.ipa：完整版（含桌面小组件、控制中心按钮、宠物实时活动）
+          - MoonMoney-${VERSION}-lite.ipa：精简版（不含小组件扩展），免费 Apple ID 签名更容易成功。没有灵动岛和锁屏宠物
 
           如果手机上装过 2.0 版本，请先在「我的 → 数据管理」导出备份，删除旧 App 后再安装。"

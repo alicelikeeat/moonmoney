@@ -9,6 +9,7 @@ struct SettingsView: View {
     @Query(sort: \Ledger.order) private var ledgers: [Ledger]
 
     @State private var message: String?
+    @State private var sessionActive = false
 
     var body: some View {
         @Bindable var settings = settings
@@ -31,6 +32,17 @@ struct SettingsView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
+                    }
+
+                    Button {
+                        Task {
+                            message = await PetSessionActions.toggle(context: context)
+                            sessionActive = PetSessionStore.isActive()
+                        }
+                    } label: {
+                        SettingsLabel(sessionActive ? "结束今日记账" : "开始今日记账",
+                                      symbol: "livephoto", color: .orange,
+                                      subtitle: "灵动岛和锁屏上的今日支出")
                     }
 
                     Section {
@@ -212,6 +224,10 @@ struct SettingsView: View {
                 set: { Router.shared.showSkinPicker = $0 }
             )) {
                 SkinPickerView()
+            }
+            .task {
+                await PetActivityController.reconcile()
+                sessionActive = PetSessionStore.isActive()
             }
             .alert("提示", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
                 Button("好") { message = nil }

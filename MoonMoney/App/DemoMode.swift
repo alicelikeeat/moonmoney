@@ -25,6 +25,9 @@ enum DemoMode {
         if let index = arguments.firstIndex(of: "-moneyFont"), index + 1 < arguments.count {
             AppSettings.shared.moneyFontRaw = arguments[index + 1]
         }
+        if arguments.contains("-customPet") {
+            installDemoCustomPet()
+        }
         if arguments.contains("-demoData") {
             let count = (try? context.fetchCount(FetchDescriptor<Record>())) ?? 0
             if count == 0 {
@@ -41,9 +44,9 @@ enum DemoMode {
         case "skins":
             router.tab = .me
             router.showSkinPicker = true
-        case "map", "places", "alerts", "calendar", "pet":
+        case "map", "places", "alerts", "calendar", "pet", "surfaces":
             router.tab = .home
-            router.homeRoute = ["map": .map, "places": .places, "alerts": .alerts, "calendar": .calendar, "pet": .pet][screen]
+            router.homeRoute = ["map": .map, "places": .places, "alerts": .alerts, "calendar": .calendar, "pet": .pet, "surfaces": .surfaces][screen]
         case "assets": router.tab = .assets
         case "me": router.tab = .me
         case "search": router.tab = .search
@@ -61,5 +64,24 @@ enum DemoMode {
             }
         default: router.tab = .home
         }
+    }
+
+    /// A solid pixel pet so the screenshot run can show a custom pet without a photo library.
+    private static func installDemoCustomPet() {
+        var pixels = [PetPixelColor](repeating: .clear, count: 32 * 32)
+        for y in 6..<26 {
+            for x in 8..<24 {
+                let ear = y < 12 && (x < 12 || x > 19)
+                pixels[y * 32 + x] = ear
+                    ? PetPixelColor(r: 255, g: 150, b: 190, a: 255)
+                    : PetPixelColor(r: 255, g: 196, b: 92, a: 255)
+            }
+        }
+        let bitmap = PetBitmap(width: 32, height: 32, pixels: pixels)
+        guard let raster = PetPixelate.rasters(from: [bitmap], paletteCount: 6, cropInset: 0).first else { return }
+        let id = "demo-custom"
+        PetCustomLibrary.save(PetCustomRecord(id: id, name: "小像素", frames: [raster], createdAt: .now))
+        AppSettings.shared.petCustomID = id
+        AppSettings.shared.petName = "小像素"
     }
 }
