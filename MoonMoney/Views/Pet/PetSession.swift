@@ -1,4 +1,5 @@
 import ActivityKit
+import Foundation
 import SwiftData
 
 /// Start and stop the daily bookkeeping Live Activity from anywhere in the app.
