@@ -371,7 +371,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "使用面容 ID 解锁 MoonMoney，保护你的账目隐私。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "记账时可附上消费地点，用于资金地图。不会上传你的位置。";
-				INFOPLIST_KEY_NSSupportsLiveActivities = NO;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -408,7 +408,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "使用面容 ID 解锁 MoonMoney，保护你的账目隐私。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "记账时可附上消费地点，用于资金地图。不会上传你的位置。";
-				INFOPLIST_KEY_NSSupportsLiveActivities = NO;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

@@ -182,6 +182,12 @@ final class AppSettings {
         if startDay != monthStartDay { monthStartDay = startDay }
         let monday = defaults.object(forKey: Keys.weekMonday) as? Bool ?? true
         if monday != weekStartsOnMonday { weekStartsOnMonday = monday }
+        let species = defaults.string(forKey: Keys.petSpecies) ?? "rabbit"
+        if species != petSpeciesRaw { petSpeciesRaw = species }
+        let name = defaults.string(forKey: Keys.petName) ?? ""
+        if name != petName { petName = name }
+        let enabled = defaults.object(forKey: Keys.petEnabled) as? Bool ?? true
+        if enabled != petEnabled { petEnabled = enabled }
     }
 
     /// Converts an amount in `code` into base currency cents.

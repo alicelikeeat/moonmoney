@@ -142,6 +142,7 @@ struct DataManagementView: View {
         .confirmationDialog("在当前账本生成约 3 个月的示例账单？", isPresented: $confirmSample, titleVisibility: .visible) {
             Button("生成") {
                 Seed.insertSampleRecords(into: context)
+                PetCenter.shared.refresh(context: context)
                 WidgetSync.reload()
                 Haptics.success()
             }
@@ -178,6 +179,7 @@ struct DataManagementView: View {
         do {
             let outcome = try CSVService.importCSV(from: url, into: context)
             Spotlight.reindexAll(context: context)
+            PetCenter.shared.refresh(context: context)
             WidgetSync.reload()
             message = "已导入 \(outcome.imported) 笔" + (outcome.skipped > 0 ? "，跳过 \(outcome.skipped) 行" : "")
         } catch {
@@ -190,6 +192,7 @@ struct DataManagementView: View {
         defer { working = false }
         do {
             let summary = try BackupService.restore(from: url, context: context)
+            PetCenter.shared.refresh(context: context)
             Haptics.success()
             message = "恢复完成：\(summary.records) 笔账单、\(summary.accounts) 个账户、\(summary.categories) 个分类。"
         } catch {
@@ -202,6 +205,7 @@ struct DataManagementView: View {
         defer { working = false }
         do {
             try BackupService.eraseAll(context: context, resetAppearance: resetAppearance)
+            PetCenter.shared.refresh(context: context)
             Haptics.success()
             message = "已清空所有数据，并恢复了默认分类和账户。"
         } catch {

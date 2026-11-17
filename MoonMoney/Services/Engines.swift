@@ -108,7 +108,7 @@ final class Router {
         }
     }
 
-    /// moonmoney://add?kind=income, moonmoney://ai, moonmoney://stats
+    /// moonmoney://add?kind=income, moonmoney://ai, moonmoney://pet, moonmoney://stats
     func handle(url: URL) {
         guard url.scheme == "moonmoney" else { return }
         let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
@@ -129,6 +129,9 @@ final class Router {
             tab = .home
             homeRoute = .alerts
         case "assets": tab = .assets
+        case "pet":
+            tab = .home
+            homeRoute = .pet
         default: tab = .home
         }
     }

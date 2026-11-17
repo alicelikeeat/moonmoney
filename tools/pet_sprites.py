@@ -2,7 +2,7 @@
 
 Edit the grids here, then run:
   python3 tools/pet_sprites.py preview out.png   # render a preview sheet
-  python3 tools/pet_sprites.py swift MoonMoney/Views/Pet/PetSprites.swift
+  python3 tools/pet_sprites.py swift Shared/PetSprites.swift
 
 Cell codes:  . empty  o outline  b body  l light (belly)  s shade/stripe
              p pink   h horn/accent  y yellow  w wing  t tail

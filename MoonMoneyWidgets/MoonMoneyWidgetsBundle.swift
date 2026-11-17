@@ -6,6 +6,8 @@ import WidgetKit
 struct MoonMoneyWidgetsBundle: WidgetBundle {
     var body: some Widget {
         SummaryWidget()
+        PetWidget()
+        PetLiveActivity()
         QuickAddControl()
         AIEntryControl()
     }

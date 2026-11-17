@@ -1,11 +1,14 @@
 name: Simulator tests and screenshots
 
 # Runs the unit tests on an iOS simulator, then launches each main screen with
-# demo data in light and dark mode and publishes screenshots + test results.
+# demo data in light and dark mode. Pushes to main / ccr-* also publish screenshots.
+# Pull requests run the same tests and screenshots, and do not touch any release.
 
 on:
   push:
     branches: [main, "ccr-*"]
+    paths-ignore: ["**.md"]
+  pull_request:
     paths-ignore: ["**.md"]
   workflow_dispatch:
 
@@ -99,9 +102,19 @@ jobs:
           ls -la shots
 
       - name: Publish screenshots
+        # Pull requests run the simulator tests, but must not replace the screenshots release.
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/ccr-'))
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            echo "Pull request: leaving releases untouched."
+            exit 0
+          fi
+          case "${GITHUB_REF}" in
+            refs/heads/main|refs/heads/ccr-*) ;;
+            *) echo "Not a release branch (${GITHUB_REF}): leaving releases untouched."; exit 0 ;;
+          esac
           gh release delete screenshots --yes --cleanup-tag 2>/dev/null || true
           gh release create screenshots shots/*.png shots/tests.txt \
             --target "$GITHUB_SHA" --prerelease \
