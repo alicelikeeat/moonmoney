@@ -8,6 +8,7 @@ enum HomeRoute: Hashable {
     case map
     case places
     case pet
+    case surfaces
 }
 
 struct HomeView: View {
@@ -82,6 +83,7 @@ struct HomeView: View {
                     case .map: MoneyMapView()
                     case .places: MoneyMapView(initialMode: .places)
                     case .pet: PetHomeView()
+                    case .surfaces: PetSurfacesPreview()
                     }
                 }
                 .navigationDestination(for: Record.self) { record in

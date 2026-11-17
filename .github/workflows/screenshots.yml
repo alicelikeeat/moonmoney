@@ -99,7 +99,21 @@ jobs:
           xcrun simctl terminate "$UDID" com.moonmoney.app 2>/dev/null || true
           xcrun simctl launch "$UDID" com.moonmoney.app -skin liquid -pixelFont ark -moneyFont body
           sleep 3
+          # Widget and Live Activity views, rendered with the same SwiftUI the extensions use.
+          xcrun simctl terminate "$UDID" com.moonmoney.app 2>/dev/null || true
+          xcrun simctl ui "$UDID" appearance light
+          xcrun simctl launch "$UDID" com.moonmoney.app -demoData -screen surfaces
+          sleep 8
+          xcrun simctl io "$UDID" screenshot "shots/light-surfaces.png"
           ls -la shots
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulator-screenshots
+          path: shots/*.png
+          if-no-files-found: ignore
 
       - name: Publish screenshots
         # Pull requests run the simulator tests, but must not replace the screenshots release.
