@@ -139,6 +139,7 @@ struct PetFacts: Sendable {
     var currency: String = "CNY"
     var budgetPressured = false
     var enabled = true
+    var customPetID: String? = nil
     var now: Date = .now
     var calendar: Calendar = .current
 }
@@ -164,6 +165,8 @@ struct PetSnapshot: Codable, Equatable, Sendable {
     var hint: String
     var progress: Double
     var enabled: Bool
+    /// Set when the user is showing a pet made from a photo. Nil uses the built-in species.
+    var customPetID: String? = nil
     var updatedAt: Date
 
     var species: PetSpecies { PetSpecies(rawValue: speciesRaw) ?? .rabbit }
@@ -184,6 +187,7 @@ struct PetSnapshot: Codable, Equatable, Sendable {
             && monthExpense == other.monthExpense && monthBudget == other.monthBudget
             && dailyBudget == other.dailyBudget && currency == other.currency
             && hint == other.hint && progress == other.progress && enabled == other.enabled
+            && customPetID == other.customPetID
     }
 
     static var placeholder: PetSnapshot {
@@ -289,6 +293,7 @@ enum PetSnapshotLogic {
     static func make(_ facts: PetFacts) -> PetSnapshot {
         let species = PetSpecies(rawValue: facts.speciesRaw) ?? .rabbit
         let trimmed = facts.customName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let customID = facts.customPetID?.isEmpty == false ? facts.customPetID : nil
         let habit = habit(dates: facts.dates, now: facts.now, calendar: facts.calendar)
         let experience = xp(recordedDays: habit.recordedDays, recordCount: facts.dates.filter { $0 <= facts.now }.count, streak: habit.streak)
         let stage = stage(xp: experience, hasRecords: habit.recordedDays > 0)
@@ -296,7 +301,7 @@ enum PetSnapshotLogic {
         let expression = expression(stage: stage, mood: mood)
         return PetSnapshot(
             speciesRaw: species.rawValue,
-            name: trimmed.isEmpty ? species.defaultName : trimmed,
+            name: trimmed.isEmpty ? (customID == nil ? species.defaultName : "我的宠物") : trimmed,
             stageRaw: stage.rawValue,
             moodRaw: mood.rawValue,
             expressionRaw: expression.rawValue,
@@ -312,6 +317,7 @@ enum PetSnapshotLogic {
             hint: PetCopy.hint(stage: stage, mood: mood, todayExpense: facts.todayExpense, streak: habit.streak, currency: facts.currency),
             progress: progress(xp: experience, stage: stage),
             enabled: facts.enabled,
+            customPetID: customID,
             updatedAt: facts.now
         )
     }
@@ -348,6 +354,7 @@ enum PetSnapshotLogic {
             currency: settings.baseCurrency,
             budgetPressured: budgetIsPressured(budgets: budgets, records: monthRecords, interval: interval, now: now),
             enabled: settings.petEnabled,
+            customPetID: settings.petCustomID.isEmpty ? nil : settings.petCustomID,
             now: now,
             calendar: calendar
         ))

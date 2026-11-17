@@ -12,7 +12,7 @@ struct PetLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    PetPixel(species: context.state.species, stage: context.state.stage, expression: context.state.expression)
+                    PetPixel(species: context.state.species, stage: context.state.stage, expression: context.state.expression, mood: context.state.mood, customID: context.state.customPetID ?? "")
                         .frame(width: 56, height: 56)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -38,7 +38,7 @@ struct PetLiveActivity: Widget {
                     PetSessionDetails(state: context.state, endsAt: context.attributes.endsAt, stale: context.isStale)
                 }
             } compactLeading: {
-                PetPixel(species: context.state.species, stage: context.state.stage, expression: context.state.expression)
+                PetPixel(species: context.state.species, stage: context.state.stage, expression: context.state.expression, mood: context.state.mood, customID: context.state.customPetID ?? "")
                     .frame(width: 26, height: 26)
             } compactTrailing: {
                 Text(context.isStale ? "结束" : Money.compact(context.state.todayExpense))
@@ -47,7 +47,7 @@ struct PetLiveActivity: Widget {
                     .lineLimit(1)
                     .widgetAccentable()
             } minimal: {
-                PetPixel(species: context.state.species, stage: context.state.stage, expression: context.state.expression)
+                PetPixel(species: context.state.species, stage: context.state.stage, expression: context.state.expression, mood: context.state.mood, customID: context.state.customPetID ?? "")
                     .frame(width: 18, height: 18)
             }
             .widgetURL(PetLink.page)

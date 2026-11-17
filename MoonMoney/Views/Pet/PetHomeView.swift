@@ -59,6 +59,7 @@ struct PetHomeView: View {
                     HStack(spacing: 10) {
                         ForEach(PetSpecies.allCases) { species in
                             Button {
+                                settings.petCustomID = ""
                                 settings.petSpeciesRaw = species.rawValue
                                 PetCenter.shared.refresh(context: context)
                                 Haptics.tap()
@@ -71,13 +72,13 @@ struct PetHomeView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
                                 .background {
-                                    if settings.petSpeciesRaw == species.rawValue {
+                                    if settings.petCustomID.isEmpty && settings.petSpeciesRaw == species.rawValue {
                                         PixelRect(step: 4).stroke(Color.accentColor, lineWidth: 3)
                                     }
                                 }
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel("\(species.defaultName)\(settings.petSpeciesRaw == species.rawValue ? "，已选中" : "")")
+                            .accessibilityLabel("\(species.defaultName)\(settings.petCustomID.isEmpty && settings.petSpeciesRaw == species.rawValue ? "，已选中" : "")")
                         }
                     }
                     HStack {
@@ -92,6 +93,8 @@ struct PetHomeView: View {
                 }
                 .glassCard(cornerRadius: 24)
 
+                PetCustomSection()
+
                 // Rules
                 VStack(alignment: .leading, spacing: 8) {
                     Text("它怎么成长").font(Font.skin(.headline))
@@ -101,6 +104,7 @@ struct PetHomeView: View {
                     rule("moon.zzz", "两天没记账它会睡着，记一笔就醒")
                     rule("heart", "它不会生病、不会离开，放心养")
                     rule("square.grid.2x2", "主屏和锁屏小组件会显示它，点一下回到这里")
+                    rule("photo", "也可以用照片、GIF 或视频做成你自己的像素宠物")
                     Toggle("在界面中显示宠物", isOn: $settings.petEnabled)
                         .font(Font.skin(.body))
                         .padding(.top, 4)

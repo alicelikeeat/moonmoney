@@ -17,6 +17,7 @@ struct BookkeepingAttributes: ActivityAttributes {
         var currency: String
         var streak: Int
         var hint: String
+        var customPetID: String? = nil
 
         var species: PetSpecies { PetSpecies(rawValue: speciesRaw) ?? .rabbit }
         var stage: PetStage { PetStage(rawValue: stageRaw) ?? .egg }
@@ -40,6 +41,7 @@ struct BookkeepingAttributes: ActivityAttributes {
             currency = snapshot.currency
             streak = snapshot.streak
             hint = snapshot.hint
+            customPetID = snapshot.customPetID
         }
     }
 

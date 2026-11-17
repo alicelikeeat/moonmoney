@@ -84,6 +84,12 @@ struct LivePet: View {
         return f
     }
 
+    private func customFrame(tick: Int) -> Int {
+        let count = PetCustomLibrary.frameCount(id: settings.petCustomID)
+        guard count > 1 else { return 0 }
+        return (tick / 2) % count
+    }
+
     @ViewBuilder
     private func frame(center: PetCenter, t: TimeInterval, width: CGFloat, now: Date) -> some View {
         let status = center.status
@@ -97,8 +103,9 @@ struct LivePet: View {
                     .fill(.black.opacity(0.15))
                     .frame(width: size * 0.6, height: size * 0.08)
                     .offset(y: size * 0.02)
-                PetSpriteView(species: status.species, stage: status.stage, expression: f.expression,
-                              stepB: f.walking && f.tick % 2 == 0, flipped: f.flipped)
+                PetPixel(species: status.species, stage: status.stage, expression: f.expression, mood: status.mood,
+                         customID: settings.petCustomID, frameIndex: customFrame(tick: f.tick),
+                         centered: false, stepB: f.walking && f.tick % 2 == 0, flipped: f.flipped)
                     .frame(width: size, height: size)
                     .rotationEffect(.degrees(f.wobble), anchor: .bottom)
                     .offset(y: -f.lift)

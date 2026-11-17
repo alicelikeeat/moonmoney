@@ -5,10 +5,21 @@ struct PetPixel: View {
     var species: PetSpecies
     var stage: PetStage
     var expression: PetExpression
+    var mood: PetMood = .normal
+    var customID: String = ""
+    var frameIndex: Int = 0
+    var centered = true
+    var stepB = false
+    var flipped = false
 
     var body: some View {
-        PetSpriteView(species: species, stage: stage, expression: expression, centered: true)
-            .accessibilityHidden(true)
+        if let raster = PetCustomLibrary.frame(id: customID, index: frameIndex, mood: mood, stage: stage) {
+            PetRasterView(raster: raster, scale: stage.scale, centered: centered)
+                .scaleEffect(x: flipped ? -1 : 1, y: 1)
+                .accessibilityHidden(true)
+        } else {
+            PetSpriteView(species: species, stage: stage, expression: expression, stepB: stepB, flipped: flipped, centered: centered)
+        }
     }
 }
 
@@ -36,6 +47,7 @@ struct PetWidgetView: View {
     @Environment(\.widgetFamily) private var environmentFamily
     var snapshot: PetSnapshot
     var family: WidgetFamily? = nil
+    var frameIndex: Int = 0
 
     private var resolvedFamily: WidgetFamily { family ?? environmentFamily }
     private var pet: PetSnapshot { snapshot }
@@ -125,7 +137,8 @@ struct PetWidgetView: View {
     }
 
     private func sprite(_ side: CGFloat) -> some View {
-        PetPixel(species: pet.species, stage: pet.stage, expression: pet.expression)
+        PetPixel(species: pet.species, stage: pet.stage, expression: pet.expression, mood: pet.mood,
+                 customID: pet.customPetID ?? "", frameIndex: frameIndex)
             .frame(width: side, height: side)
             .opacity(pet.enabled ? 1 : 0.45)
             .accessibilityLabel("\(pet.name)，\(pet.stage.title)，\(pet.mood.title)")
@@ -140,7 +153,8 @@ struct PetSessionBanner: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            PetPixel(species: state.species, stage: state.stage, expression: state.expression)
+            PetPixel(species: state.species, stage: state.stage, expression: state.expression, mood: state.mood,
+                     customID: state.customPetID ?? "")
                 .frame(width: 64, height: 64)
                 .accessibilityLabel("\(state.name)，\(state.mood.title)")
             PetSessionDetails(state: state, endsAt: endsAt, stale: stale)

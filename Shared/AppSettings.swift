@@ -124,6 +124,11 @@ final class AppSettings {
         didSet { defaults.set(petName, forKey: Keys.petName) }
     }
 
+    /// Id of a photo pet saved in the App Group. Empty uses the built-in species.
+    var petCustomID: String {
+        didSet { defaults.set(petCustomID, forKey: Keys.petCustomID) }
+    }
+
     /// Use Apple Intelligence when the device supports it.
     var aiEnabled: Bool {
         didSet { defaults.set(aiEnabled, forKey: Keys.ai) }
@@ -161,6 +166,7 @@ final class AppSettings {
         petEnabled = defaults.object(forKey: Keys.petEnabled) as? Bool ?? true
         petSpeciesRaw = defaults.string(forKey: Keys.petSpecies) ?? "rabbit"
         petName = defaults.string(forKey: Keys.petName) ?? ""
+        petCustomID = defaults.string(forKey: Keys.petCustomID) ?? ""
         pixelFontRaw = defaults.string(forKey: Keys.pixelFont) ?? "ark"
         moneyFontRaw = defaults.string(forKey: Keys.moneyFont) ?? "body"
     }
@@ -186,6 +192,8 @@ final class AppSettings {
         if species != petSpeciesRaw { petSpeciesRaw = species }
         let name = defaults.string(forKey: Keys.petName) ?? ""
         if name != petName { petName = name }
+        let customID = defaults.string(forKey: Keys.petCustomID) ?? ""
+        if customID != petCustomID { petCustomID = customID }
         let enabled = defaults.object(forKey: Keys.petEnabled) as? Bool ?? true
         if enabled != petEnabled { petEnabled = enabled }
     }
@@ -234,6 +242,7 @@ final class AppSettings {
         static let petEnabled = "petEnabled"
         static let petSpecies = "petSpecies"
         static let petName = "petName"
+        static let petCustomID = "petCustomID"
         static let pixelFont = "pixelFont"
         static let moneyFont = "moneyFont"
     }

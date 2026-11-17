@@ -105,6 +105,10 @@ jobs:
           xcrun simctl launch "$UDID" com.moonmoney.app -demoData -screen surfaces
           sleep 8
           xcrun simctl io "$UDID" screenshot "shots/light-surfaces.png"
+          xcrun simctl terminate "$UDID" com.moonmoney.app 2>/dev/null || true
+          xcrun simctl launch "$UDID" com.moonmoney.app -demoData -customPet -screen pet
+          sleep 8
+          xcrun simctl io "$UDID" screenshot "shots/light-custom-pet.png"
           ls -la shots
 
       - name: Upload screenshots
