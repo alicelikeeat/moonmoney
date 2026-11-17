@@ -27,7 +27,7 @@ struct PetCustomSection: View {
             .disabled(busy)
             .onChange(of: pickerItem) { _, item in
                 guard let item else { return }
-                Task { await import(item, cutout: true) }
+                Task { await importItem(item, cutout: true) }
             }
 
             if !saved.isEmpty {
@@ -58,7 +58,7 @@ struct PetCustomSection: View {
                 title: Text("没法做成宠物"),
                 message: Text(failure.message),
                 primaryButton: failure.offerWholeImage
-                    ? .default(Text("使用整张图片")) { Task { await import(failure.item, cutout: false) } }
+                    ? .default(Text("使用整张图片")) { Task { await importItem(failure.item, cutout: false) } }
                     : .default(Text("好")),
                 secondaryButton: .cancel(Text("取消"))
             )
@@ -110,7 +110,7 @@ struct PetCustomSection: View {
         }
     }
 
-    private func import(_ item: PhotosPickerItem, cutout: Bool) async {
+    private func importItem(_ item: PhotosPickerItem, cutout: Bool) async {
         busy = true
         defer { busy = false }
         do {
