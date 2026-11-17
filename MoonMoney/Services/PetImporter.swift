@@ -172,17 +172,17 @@ enum PetImporter {
     }
 
     private static func apply(mask: CVPixelBuffer, to image: CGImage) -> PetBitmap {
-        var bitmap = bitmap(from: image)
+        var picture = bitmap(from: image)
         let maskImage = cgImage(from: mask) ?? image
         let maskBitmap = bitmap(from: maskImage)
-        let width = min(bitmap.width, maskBitmap.width)
-        let height = min(bitmap.height, maskBitmap.height)
-        guard width > 0, height > 0 else { return bitmap }
-        var pixels = bitmap.pixels
+        let width = min(picture.width, maskBitmap.width)
+        let height = min(picture.height, maskBitmap.height)
+        guard width > 0, height > 0 else { return picture }
+        var pixels = picture.pixels
         for y in 0..<height {
             for x in 0..<width {
                 let alpha = maskBitmap.pixel(x: x, y: y).luminance
-                let index = y * bitmap.width + x
+                let index = y * picture.width + x
                 if alpha < 16 {
                     pixels[index] = .clear
                 } else if index < pixels.count {
@@ -190,9 +190,8 @@ enum PetImporter {
                 }
             }
         }
-        bitmap.pixels = pixels
-        if !pixels.contains(where: \.isOpaque) { return bitmap }
-        return bitmap
+        picture.pixels = pixels
+        return picture
     }
 
     private static func cgImage(from buffer: CVPixelBuffer) -> CGImage? {
